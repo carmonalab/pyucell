@@ -1,1 +1,1 @@
-from .basic import basic_tool
+import score_signatures

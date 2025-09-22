@@ -3,7 +3,7 @@ build-backend = "hatchling.build"
 requires = [ "hatchling" ]
 
 [project]
-name = "pyUCell"
+name = "pyucell"
 version = "0.0.1"
 description = "python implementation for the UCell algorithm"
 readme = "README.md"
