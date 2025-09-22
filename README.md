@@ -34,18 +34,11 @@ pip install pyUCell
 pip install git+https://github.com/mass-a/pyUCell.git@main
 ```
 
-## Release notes
+## Developer guide
 
-See the [changelog][].
+https://github.com/scverse/cookiecutter-scverse?tab=readme-ov-file
 
-## Contact
 
-For questions and help requests, you can reach out in the [scverse discourse][].
-If you found a bug, please use the [issue tracker][].
-
-## Citation
-
-> t.b.a
 
 [uv]: https://github.com/astral-sh/uv
 [scverse discourse]: https://discourse.scverse.org/
