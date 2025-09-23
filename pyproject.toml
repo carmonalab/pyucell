@@ -10,7 +10,7 @@ exclude = [
 
 [project]
 name = "pyucell"
-version = "0.1.0"
+version = "0.1.1"
 description = "Ranked-based signature scoring for single-cell data (UCell)"
 readme = "README.md"
 license = { file = "LICENSE" }
