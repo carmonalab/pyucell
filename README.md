@@ -31,10 +31,39 @@ pip install pyUCell
 1. Install the latest development version:
 
 ```bash
-pip install git+https://github.com/mass-a/pyUCell.git@main
+pip install git+https://github.com/carmonalab/pyucell.git@master
 ```
 
-## Developer guide
+2. Test the installation
+```python
+import pyucell
+import scanpy as sc
+
+adata = sc.datasets.pbmc3k()
+
+signatures = {
+    'T_cell': ['CD3D', 'CD3E', 'CD2'],
+    'B_cell': ['MS4A1', 'CD79A', 'CD79B']
+}
+
+adata = pyucell.compute_ucell_scores(adata, signatures=signatures, chunk_size=500)
+```
+
+3. Visualize results e.g. on UMAP
+
+```python
+sc.pp.normalize_total(adata, target_sum=1e4)
+sc.pp.log1p(adata)
+sc.pp.scale(adata, max_value=10)
+sc.tl.pca(adata, svd_solver='arpack', n_comps=50)
+sc.pp.neighbors(adata)
+sc.tl.umap(adata)
+
+sc.pl.umap(adata, color='T_cell', cmap='viridis', ax=axes[0], size=20, show=False)
+sc.pl.umap(adata, color='B_cell', cmap='viridis', ax=axes[1], size=20, show=False)
+```
+
+## Developer guide for scverse tools
 
 https://github.com/scverse/cookiecutter-scverse?tab=readme-ov-file
 
