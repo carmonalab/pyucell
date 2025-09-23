@@ -31,7 +31,7 @@ def _calculate_U(ranks, idx, max_rank: int = 1500):
 
 
 def get_rankings(
-    adata: AnnData,
+    data,
     layer: str = None,
     max_rank: int = 1500,
     ties_method: str = "average",
@@ -41,15 +41,30 @@ def get_rankings(
 
     Parameters
     ----------
-    - adata: AnnData with cells x genes.
-    - layer: which layer to use (None = adata.X)
-    - max_rank: cap ranks at this value
-    Returns sparse matrix (genes x cells) of ranks.
+    data : AnnData | np.ndarray | sparse matrix
+        Either an AnnData object (cells x genes) or directly a 2D matrix.
+    layer : str, optional
+        Only used if input is AnnData. Which layer to use (None = adata.X).
+    max_rank : int, optional
+        Cap ranks at this value (ranks > max_rank are dropped for sparsity).
+    ties_method : str, optional
+        Passed to scipy.stats.rankdata.
+
+    Returns
+    -------
+    ranks : csr_matrix of shape (genes, cells)
+        Sparse matrix of ranks.
     """
-    X = adata.layers[layer] if layer else adata.X
+
+    # Accept either AnnData or matrix directly
+    if isinstance(data, AnnData):
+        X = data.layers[layer] if layer else data.X
+    else:
+        X = data
+
     n_cells, n_genes = X.shape
 
-    # Convert to csc for fast column slicing
+    # Convert to array
     is_sparse = sparse.issparse(X)
     Xarr = X.toarray() if is_sparse else np.asarray(X)
 
