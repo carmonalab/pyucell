@@ -5,6 +5,7 @@ from scipy.stats import rankdata
 import numpy as np
 from typing import Dict, List
 from pyucell.ranks import get_rankings
+from joblib import Parallel, delayed
 
 def _parse_sig(sig):
     pos, neg = [], []
@@ -80,7 +81,8 @@ def compute_ucell_scores(
     max_rank: int = 1500,
     ties_method: str = "average",
     chunk_size: int = 500,
-    suffix: str = "_UCell" 
+    suffix: str = "_UCell",
+    n_jobs: int = -1
 ) -> AnnData:
     """
     Compute UCell scores for an AnnData object.
@@ -102,6 +104,8 @@ def compute_ucell_scores(
         dense matrices in memory
     suffix : str, optional
         Suffix to append to column names in adata.obs.
+    n_jobs : int, optional
+        Number of parallel jobs    
 
     Returns
     -------
@@ -116,20 +120,31 @@ def compute_ucell_scores(
     # Precompute signature indices once
     sig_indices = _prepare_sig_indices(signatures, genes)
 
-    # iterate over cell chunks
-    for start in range(0, n_cells, chunk_size):
-        end = min(start + chunk_size, n_cells)
-        print(f"Processing cells {start}-{end}...")
+    # Split indices into chunks
+    starts = list(range(0, n_cells, chunk_size))
+    chunks = [(s, min(s + chunk_size, n_cells)) for s in starts]
+
+    # Iterate over cell chunks
+    def process_chunk(start, end):
         if layer:
             chunk_X = adata.layers[layer][start:end, :]
         else:
             chunk_X = adata.X[start:end, :]
-
-        # compute ranks
+        #compute ranks    
         ranks_chunk = get_rankings(chunk_X, max_rank=max_rank, ties_method=ties_method)
-        # compute UCell scores
+        #get UCell scores for chunk
         scores_chunk = _score_chunk(ranks_chunk, sig_indices, max_rank=max_rank)
-        scores_all[start:end, :] = scores_chunk
+        return (start, end, scores_chunk)
+
+    # Run chunks in parallel
+    results = Parallel(n_jobs=n_jobs, backend="loky")(
+        delayed(process_chunk)(start, end) for start, end in chunks
+    )
+
+    # Merge results back
+    scores_all = np.zeros((n_cells, n_signatures), dtype=np.float32)
+    for start, end, scores_chunk in results:
+        scores_all[start:end, :] = scores_chunk 
 
     # Store scores in adata.obs with suffix
     for j, sig_name in enumerate(signatures.keys()):

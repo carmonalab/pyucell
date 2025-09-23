@@ -31,8 +31,13 @@ classifiers = [
 dependencies = [
   "anndata",
   "scipy",
-  "scanpy",
   "session-info2",
+]
+optional-dependencies.plot = [
+  "scanpy>=1.9"
+]
+optional-dependencies.parallel = [
+  "joblib>=1.2"
 ]
 optional-dependencies.dev = [
   "pre-commit",
