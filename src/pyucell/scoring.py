@@ -80,10 +80,33 @@ def compute_ucell_scores(
     max_rank: int = 1500,
     ties_method: str = "average",
     chunk_size: int = 500,
+    suffix: str = "_UCell" 
 ) -> AnnData:
     """
-    Compute UCell scores for an AnnData object using cell-wise chunking.
-    Stores results in adata.obs.
+    Compute UCell scores for an AnnData object.
+
+    Parameters
+    ----------
+    adata : AnnData
+        An AnnData object (cells x genes)
+    signatures:  Dict[str, List[str]]
+        A dictionary of signatures, where the names of the entries are the signature names   
+    layer : str, optional
+        Which layer to use (None = adata.X).
+    max_rank : int, optional
+        Cap ranks at this value (ranks > max_rank are dropped for sparsity).
+    ties_method : str, optional
+        Passed to scipy.stats.rankdata.
+    chunk_size : int, optional
+        The size of the blocks of cells to be processed at once. Avoids having large
+        dense matrices in memory
+    suffix : str, optional
+        Suffix to append to column names in adata.obs.
+
+    Returns
+    -------
+    An AnnData object with signature scores in adata.obs
+
     """
     genes = adata.var_names.to_numpy()
     n_cells = adata.n_obs
@@ -108,8 +131,8 @@ def compute_ucell_scores(
         scores_chunk = _score_chunk(ranks_chunk, sig_indices, max_rank=max_rank)
         scores_all[start:end, :] = scores_chunk
 
-    # store in adata.obs
+    # Store scores in adata.obs with suffix
     for j, sig_name in enumerate(signatures.keys()):
-        adata.obs[sig_name] = scores_all[:, j]
+        adata.obs[f"{sig_name}{suffix}"] = scores_all[:, j]
 
     return adata
