@@ -4,30 +4,6 @@ from scipy import sparse
 from scipy.stats import rankdata
 import numpy as np
 
-def _parse_sig(sig):
-    pos, neg = [], []
-    for g in sig:
-        gs = str(g).strip()
-        if gs.endswith("+"):
-            pos.append(gs[:-1])
-        elif gs.endswith("-"):
-            neg.append(gs[:-1])
-        else:
-            pos.append(gs)
-    return pos, neg
-
-
-def _calculate_U(ranks, idx, max_rank: int = 1500):
-    sum_pos = np.array(ranks[idx, :].sum(axis=0)).ravel()
-    npos = len(idx)
-    s_min = npos * (npos + 1) / 2.0
-    s_max = npos * max_rank
-    U = sum_pos - s_min
-    Umax = s_max - s_min
-    score = 1.0 - (U / Umax)
-    return score
-
-
 def get_rankings(
     data,
     layer: str = None,
