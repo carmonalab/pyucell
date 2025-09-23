@@ -2,10 +2,16 @@
 build-backend = "hatchling.build"
 requires = [ "hatchling" ]
 
+[tool.hatch.build]
+exclude = [
+  "docs*",
+  "examples*",
+]
+
 [project]
 name = "pyucell"
 version = "0.0.1"
-description = "python implementation for the UCell algorithm"
+description = "Python implementation for the UCell algorithm"
 readme = "README.md"
 license = { file = "LICENSE" }
 maintainers = [
@@ -24,6 +30,8 @@ classifiers = [
 ]
 dependencies = [
   "anndata",
+  "scipy",
+  "scipy.stats",
   # for debug logging (referenced from the issue template)
   "session-info2",
 ]
@@ -54,8 +62,8 @@ optional-dependencies.test = [
 ]
 # https://docs.pypi.org/project_metadata/#project-urls
 urls.Documentation = "https://pyUCell.readthedocs.io/"
-urls.Homepage = "https://github.com/mass-a/pyUCell"
-urls.Source = "https://github.com/mass-a/pyUCell"
+urls.Homepage = "https://github.com/carmonalab/pyUCell"
+urls.Source = "https://github.com/carmonalab/pyUCell"
 
 [tool.hatch.envs.default]
 installer = "uv"
