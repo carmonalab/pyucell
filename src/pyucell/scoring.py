@@ -4,6 +4,7 @@ from scipy import sparse
 from scipy.stats import rankdata
 import numpy as np
 from typing import Dict, List
+from pyucell.ranks import get_rankings
 
 def _parse_sig(sig):
     pos, neg = [], []

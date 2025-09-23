@@ -22,5 +22,5 @@ def test_compute_ucell():
         'T_cell': ['CD3D', 'CD3E', 'CD2'],
         'B_cell': ['MS4A1', 'CD79A', 'CD79B']
     }
-    compute_ucell_scores(adata, signatures=signatures, chunk_size=500)
+    adata = pyucell.compute_ucell_scores(adata, signatures=signatures, chunk_size=500)
     return adata   
