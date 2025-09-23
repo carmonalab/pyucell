@@ -1,10 +1,8 @@
 from warnings import warn
-
-import numpy as np
 from anndata import AnnData
 from scipy import sparse
 from scipy.stats import rankdata
-
+import numpy as np
 
 def _parse_sig(sig):
     pos, neg = [], []

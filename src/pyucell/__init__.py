@@ -1,7 +1,8 @@
 from importlib.metadata import version
 
-from . import tl
+from .ranks import get_rankings
 
-__all__ = ["tl"]
-
+__all__ = [
+    "get_rankings"
+]
 __version__ = version("pyucell")

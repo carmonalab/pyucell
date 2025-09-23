@@ -31,8 +31,7 @@ classifiers = [
 dependencies = [
   "anndata",
   "scipy",
-  "scipy.stats",
-  # for debug logging (referenced from the issue template)
+  "scanpy",
   "session-info2",
 ]
 optional-dependencies.dev = [
