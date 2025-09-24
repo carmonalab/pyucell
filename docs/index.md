@@ -1,7 +1,9 @@
+# pyUCell
+
 ```{include} ../README.md
 ```
 
-Documentation
+# Documentation
 ```{toctree}
 :hidden: true
 :maxdepth: 2
@@ -11,7 +13,7 @@ contributing.md
 references.md
 ```
 
-Examples & Tutorials
+# Examples & Tutorials
 ```{toctree}
 :hidden: true
 :maxdepth: 2
