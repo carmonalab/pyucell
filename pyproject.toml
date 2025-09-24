@@ -2,15 +2,9 @@
 build-backend = "hatchling.build"
 requires = [ "hatchling" ]
 
-[tool.hatch.build]
-exclude = [
-  "docs*",
-  "examples*",
-]
-
 [project]
 name = "pyucell"
-version = "0.1.1"
+version = "0.1.2"
 description = "Ranked-based signature scoring for single-cell data (UCell)"
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -33,12 +27,6 @@ dependencies = [
   "scipy",
   "session-info2",
 ]
-optional-dependencies.plot = [
-  "scanpy>=1.9"
-]
-optional-dependencies.parallel = [
-  "joblib>=1.2"
-]
 optional-dependencies.dev = [
   "pre-commit",
   "twine>=4.0.2",
@@ -59,6 +47,12 @@ optional-dependencies.doc = [
   "sphinxcontrib-bibtex>=1",
   "sphinxext-opengraph",
 ]
+optional-dependencies.parallel = [
+  "joblib>=1.2",
+]
+optional-dependencies.plot = [
+  "scanpy>=1.9",
+]
 optional-dependencies.test = [
   "coverage",
   "pytest",
@@ -68,6 +62,12 @@ optional-dependencies.test = [
 urls.Documentation = "https://pyUCell.readthedocs.io/"
 urls.Homepage = "https://github.com/carmonalab/pyUCell"
 urls.Source = "https://github.com/carmonalab/pyUCell"
+
+[tool.hatch.build]
+exclude = [
+  "docs*",
+  "examples*",
+]
 
 [tool.hatch.envs.default]
 installer = "uv"
