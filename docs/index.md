@@ -6,7 +6,6 @@ Documentation
 :hidden: true
 :maxdepth: 2
 
-api.md
 changelog.md
 contributing.md
 references.md
