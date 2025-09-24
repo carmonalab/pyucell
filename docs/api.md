@@ -1,9 +1,9 @@
-# API
+# Functions
 
 ```{eval-rst}
 .. autosummary::
     :toctree: generated
 
-    compute_ucell_scores
-    get_rankings
+    pyucell.compute_ucell_scores
+    pyucell.get_rankings
 ```
