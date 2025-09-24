@@ -34,7 +34,8 @@ pip install pyUCell
 pip install git+ssh://git@github.com/carmonalab/pyucell.git@master
 ```
 
-2. Test the installation
+
+#### Test the installation
 ```python
 import pyucell
 import scanpy as sc
