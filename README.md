@@ -3,8 +3,8 @@
 [![Tests][badge-tests]][tests]
 [![Documentation][badge-docs]][documentation]
 
-[badge-tests]: https://img.shields.io/github/actions/workflow/status/mass-a/pyUCell/test.yaml?branch=main
-[badge-docs]: https://img.shields.io/readthedocs/pyUCell
+[badge-tests]: https://img.shields.io/github/actions/workflow/status/carmonalab/pyucell/test.yaml?branch=master
+[badge-docs]: https://img.shields.io/readthedocs/pyucell
 
 python implementation for the UCell algorithm
 
