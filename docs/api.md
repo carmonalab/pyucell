@@ -1,9 +1,6 @@
 # API
 
 ```{eval-rst}
-.. module: pyucell
-.. currentmodule:: pyucell
-
 .. autosummary::
     :toctree: generated
 
