@@ -31,7 +31,7 @@ pip install pyUCell
 1. Install the latest development version:
 
 ```bash
-pip install git+https://github.com/carmonalab/pyucell.git@master
+pip install git+ssh://git@github.com/carmonalab/pyucell.git@master
 ```
 
 2. Test the installation
@@ -46,7 +46,7 @@ signatures = {
     'B_cell': ['MS4A1', 'CD79A', 'CD79B']
 }
 
-adata = pyucell.compute_ucell_scores(adata, signatures=signatures, chunk_size=500)
+pyucell.compute_ucell_scores(adata, signatures=signatures, chunk_size=500)
 ```
 
 3. Visualize results e.g. on UMAP

@@ -1,11 +1,10 @@
-from warnings import warn
-from anndata import AnnData
-from scipy import sparse
-from scipy.stats import rankdata
 import numpy as np
-from typing import Dict, List
-from pyucell.ranks import get_rankings
+from anndata import AnnData
 from joblib import Parallel, delayed
+from scipy import sparse
+
+from pyucell.ranks import get_rankings
+
 
 def _parse_sig(sig):
     pos, neg = [], []
@@ -19,11 +18,13 @@ def _parse_sig(sig):
             pos.append(gs)
     return pos, neg
 
+
 def _prepare_sig_indices(signatures: dict, genes: np.ndarray):
     """
     Parse all signatures once and map to gene indices.
 
-    Returns:
+    Returns
+    -------
         sig_indices: dict of signature_name -> list of gene indices
     """
     gene_idx = {g: i for i, g in enumerate(genes)}
@@ -36,8 +37,8 @@ def _prepare_sig_indices(signatures: dict, genes: np.ndarray):
 
     return sig_indices
 
-def _calculate_U(ranks, idx, max_rank: int = 1500):
 
+def _calculate_U(ranks, idx, max_rank: int = 1500):
     if sparse.issparse(ranks):
         ranks_dense = ranks[idx, :].toarray()
     else:
@@ -45,7 +46,7 @@ def _calculate_U(ranks, idx, max_rank: int = 1500):
 
     # Replace zeros (sparse) with max_rank
     ranks_dense[ranks_dense == 0] = max_rank
- 
+
     # Sum ranks per cell
     rank_sum = np.array(ranks_dense.sum(axis=0)).ravel()
     lgt = len(idx)
@@ -58,15 +59,12 @@ def _calculate_U(ranks, idx, max_rank: int = 1500):
     return score
 
 
-def _score_chunk(ranks: sparse.csr_matrix,
-    sig_indices: dict,
-    max_rank: int = 1500):
-
+def _score_chunk(ranks: sparse.csr_matrix, sig_indices: dict, max_rank: int = 1500):
     n_genes, n_cells = ranks.shape
     n_signatures = len(sig_indices)
     scores = np.zeros((n_cells, n_signatures), dtype=np.float32)
 
-    for j, (sig_name, idx) in enumerate(sig_indices.items()):
+    for j, (_sig_name, idx) in enumerate(sig_indices.items()):
         if len(idx) == 0:
             continue
         scores[:, j] = _calculate_U(ranks, idx, max_rank=max_rank)
@@ -76,14 +74,14 @@ def _score_chunk(ranks: sparse.csr_matrix,
 
 def compute_ucell_scores(
     adata: AnnData,
-    signatures: Dict[str, List[str]],
+    signatures: dict[str, list[str]],
     layer: str = None,
     max_rank: int = 1500,
     ties_method: str = "average",
     chunk_size: int = 500,
     suffix: str = "_UCell",
-    n_jobs: int = -1
-) -> AnnData:
+    n_jobs: int = -1,
+):
     """
     Compute UCell scores for an AnnData object.
 
@@ -92,7 +90,7 @@ def compute_ucell_scores(
     adata : AnnData
         An AnnData object (cells x genes)
     signatures:  Dict[str, List[str]]
-        A dictionary of signatures, where the names of the entries are the signature names   
+        A dictionary of signatures, where the names of the entries are the signature names
     layer : str, optional
         Which layer to use (None = adata.X).
     max_rank : int, optional
@@ -105,11 +103,11 @@ def compute_ucell_scores(
     suffix : str, optional
         Suffix to append to column names in adata.obs.
     n_jobs : int, optional
-        Number of parallel jobs    
+        Number of parallel jobs
 
     Returns
     -------
-    An AnnData object with signature scores in adata.obs
+    Adds signature scores in adata.obs
 
     """
     genes = adata.var_names.to_numpy()
@@ -130,24 +128,20 @@ def compute_ucell_scores(
             chunk_X = adata.layers[layer][start:end, :]
         else:
             chunk_X = adata.X[start:end, :]
-        #compute ranks    
+        # compute ranks
         ranks_chunk = get_rankings(chunk_X, max_rank=max_rank, ties_method=ties_method)
-        #get UCell scores for chunk
+        # get UCell scores for chunk
         scores_chunk = _score_chunk(ranks_chunk, sig_indices, max_rank=max_rank)
         return (start, end, scores_chunk)
 
     # Run chunks in parallel
-    results = Parallel(n_jobs=n_jobs, backend="loky")(
-        delayed(process_chunk)(start, end) for start, end in chunks
-    )
+    results = Parallel(n_jobs=n_jobs, backend="loky")(delayed(process_chunk)(start, end) for start, end in chunks)
 
     # Merge results back
     scores_all = np.zeros((n_cells, n_signatures), dtype=np.float32)
     for start, end, scores_chunk in results:
-        scores_all[start:end, :] = scores_chunk 
+        scores_all[start:end, :] = scores_chunk
 
     # Store scores in adata.obs with suffix
     for j, sig_name in enumerate(signatures.keys()):
         adata.obs[f"{sig_name}{suffix}"] = scores_all[:, j]
-
-    return adata
