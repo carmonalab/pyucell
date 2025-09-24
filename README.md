@@ -6,7 +6,9 @@
 [badge-tests]: https://img.shields.io/github/actions/workflow/status/carmonalab/pyucell/test.yaml?branch=master
 [badge-docs]: https://img.shields.io/readthedocs/pyucell
 
-python implementation for the UCell algorithm
+⚠️ **Under Development** ⚠️
+
+Python implementation for the UCell algorithm
 
 ## Getting started
 
@@ -18,7 +20,6 @@ in particular, the [API documentation][].
 You need to have Python 3.10 or newer installed on your system.
 If you don't have Python installed, we recommend installing [uv][].
 
-There are several alternative options to install pyUCell:
 
 <!--
 1) Install the latest release of `pyUCell` from [PyPI][]:
