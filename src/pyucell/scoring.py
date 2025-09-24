@@ -19,43 +19,65 @@ def _parse_sig(sig):
     return pos, neg
 
 
-def _prepare_sig_indices(signatures: dict, genes: np.ndarray):
+def _prepare_sig_indices(signatures: dict, genes: np.ndarray, missing_genes: str = "impute"):
     """
-    Parse all signatures once and map to gene indices.
+    Map signature genes to indices in the dataset.
+
+    Parameters
+    ----------
+    signatures : dict
+        Dictionary of signature_name -> list of genes.
+    genes : np.ndarray
+        Array of gene names in adata.var_names.
+    missing_genes : str
+        "impute": missing genes get a placeholder -1 (to be treated as max_rank)
+        "skip": missing genes are simply removed
 
     Returns
     -------
-        sig_indices: dict of signature_name -> list of gene indices
+    sig_indices : dict
+        signature_name -> list of indices (or -1 for missing genes if impute)
     """
     gene_idx = {g: i for i, g in enumerate(genes)}
     sig_indices = {}
 
     for sig_name, sig_genes in signatures.items():
         pos_genes, _ = _parse_sig(sig_genes)
-        idx = [gene_idx[g] for g in pos_genes if g in gene_idx]
+        if missing_genes == "impute":
+            idx = [gene_idx.get(g, -1) for g in pos_genes]
+        elif missing_genes == "skip":
+            idx = [gene_idx[g] for g in pos_genes if g in gene_idx]
+        else:
+            raise ValueError("missing_genes must be 'impute' or 'skip'")
         sig_indices[sig_name] = idx
 
     return sig_indices
 
 
 def _calculate_U(ranks, idx, max_rank: int = 1500):
-    if sparse.issparse(ranks):
-        ranks_dense = ranks[idx, :].toarray()
-    else:
-        ranks_dense = np.asarray(ranks[idx, :])
-
-    # Replace zeros (sparse) with max_rank
-    ranks_dense[ranks_dense == 0] = max_rank
-
-    # Sum ranks per cell
-    rank_sum = np.array(ranks_dense.sum(axis=0)).ravel()
+    idx = np.array(idx)
     lgt = len(idx)
+    n_cells = ranks.shape[1]
+
+    # Split indices (missing genes get index -1)
+    missing_idx = idx[idx == -1]
+    present_idx = idx[idx != -1]
+
+    # Start with sum from missing genes, if any
+    rank_sum = np.full(n_cells, len(missing_idx) * max_rank, dtype=np.float32)
+
+    if len(present_idx) > 0:
+        present_ranks = ranks[present_idx, :]
+        if sparse.issparse(present_ranks):
+            present_ranks = present_ranks.toarray()
+        present_ranks = np.asarray(present_ranks, dtype=np.float32)
+        # rank==0 is equivalent to max_rank (for sparsity)
+        present_ranks[present_ranks == 0] = max_rank
+        rank_sum += present_ranks.sum(axis=0)
 
     s_min = lgt * (lgt + 1) / 2.0
     s_max = lgt * max_rank
-    U = rank_sum - s_min
-    Umax = s_max - s_min
-    score = 1.0 - (U / Umax)
+    score = 1.0 - (rank_sum - s_min) / (s_max - s_min)
     return score
 
 
@@ -78,6 +100,7 @@ def compute_ucell_scores(
     layer: str = None,
     max_rank: int = 1500,
     ties_method: str = "average",
+    missing_genes: str = "impute",
     chunk_size: int = 500,
     suffix: str = "_UCell",
     n_jobs: int = -1,
@@ -97,6 +120,9 @@ def compute_ucell_scores(
         Cap ranks at this value (ranks > max_rank are dropped for sparsity).
     ties_method : str, optional
         Passed to scipy.stats.rankdata.
+    missing_genes : str
+        "impute": missing genes get a placeholder -1 (to be treated as max_rank)
+        "skip": missing genes are simply removed
     chunk_size : int, optional
         The size of the blocks of cells to be processed at once. Avoids having large
         dense matrices in memory
@@ -116,7 +142,7 @@ def compute_ucell_scores(
     scores_all = np.zeros((n_cells, n_signatures), dtype=np.float32)
 
     # Precompute signature indices once
-    sig_indices = _prepare_sig_indices(signatures, genes)
+    sig_indices = _prepare_sig_indices(signatures, genes, missing_genes=missing_genes)
 
     # Split indices into chunks
     starts = list(range(0, n_cells, chunk_size))
