@@ -6,7 +6,6 @@
 :maxdepth: 2
 :caption: Documentation
 
-api.md
 changelog.md
 contributing.md
 ```

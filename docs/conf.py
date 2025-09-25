@@ -7,17 +7,14 @@
 # -- Path setup --------------------------------------------------------------
 
 import sys
-import os
 from datetime import datetime
 from importlib.metadata import metadata
 from pathlib import Path
 
 HERE = Path(__file__).parent
-ROOT = HERE.parent
+SRC = HERE.parent / "src"
+sys.path.insert(0, str(SRC)) 
 sys.path.insert(0, str(HERE / "extensions"))
-sys.path.insert(0, str(ROOT / "src" / "pyucell"))
-sys.path.insert(0, str(ROOT))
-
 
 # -- Project information -----------------------------------------------------
 
