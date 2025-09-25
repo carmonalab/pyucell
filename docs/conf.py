@@ -16,6 +16,7 @@ HERE = Path(__file__).parent
 sys.path.insert(0, str(HERE / "extensions"))
 sys.path.insert(0, os.path.abspath(os.path.join('..', 'src')))
 
+
 # -- Project information -----------------------------------------------------
 
 # NOTE: If you installed your project in editable mode, this might be stale.
@@ -38,7 +39,7 @@ needs_sphinx = "4.0"
 
 html_context = {
     "display_github": True,  # Integrate GitHub
-    "github_user": "mass-a",
+    "github_user": "carmonalab",
     "github_repo": project_name,
     "github_version": "master",
     "conf_py_path": "/docs/",
