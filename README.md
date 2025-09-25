@@ -46,7 +46,7 @@ signatures = {
     'B_cell': ['MS4A1', 'CD79A', 'CD79B']
 }
 
-uc.compute_ucell_scores(adata, signatures=signatures, chunk_size=500)
+uc.compute_ucell_scores(adata, signatures=signatures)
 ```
 
 ## Tutorials and how-to

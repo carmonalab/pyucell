@@ -16,4 +16,5 @@ contributing.md
 :caption: Examples & Tutorials
 
 notebooks/basic
+notebooks/parameters
 ```
