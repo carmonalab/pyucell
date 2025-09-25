@@ -48,6 +48,7 @@ html_context = {
 # They can be extensions coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 extensions = [
     "myst_nb",
+    "myst_parser",
     "sphinx_copybutton",
     "sphinx.ext.autodoc",
     "sphinx.ext.intersphinx",

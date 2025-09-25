@@ -1,7 +1,21 @@
 # Functions
 
-.. autosummary::
-    :toctree: generated
+Import pyUCell as:
+```
+import pyucell as uc
+```
 
-    compute_ucell_scores
-    get_rankings
+
+```{eval-rst}
+.. currentmodule:: pyucell
+```
+
+
+```{eval-rst}
+.. autosummary::
+   :nosignatures:
+   :toctree: generated
+
+   compute_ucell_scores
+   get_rankings
+```
