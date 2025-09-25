@@ -25,6 +25,8 @@ classifiers = [
 dependencies = [
   "anndata",
   "scipy",
+  "scanpy",
+  "joblib>=1.2",
   "session-info2",
 ]
 optional-dependencies.dev = [
@@ -47,13 +49,8 @@ optional-dependencies.doc = [
   "sphinxcontrib-bibtex>=1",
   "sphinxext-opengraph",
 ]
-optional-dependencies.parallel = [
-  "joblib>=1.2",
-]
-optional-dependencies.plot = [
-  "scanpy>=1.9",
-]
 optional-dependencies.test = [
+  "scanpy>=1.9",
   "coverage",
   "pytest",
   "pytest-cov", # For VS Code’s coverage functionality
