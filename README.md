@@ -1,4 +1,4 @@
-# pyUCell
+# pyUCell: gene signature scoring for scRNA-seq (python implementation)
 
 [![Tests][badge-tests]][tests]
 [![Documentation][badge-docs]][documentation]
@@ -8,17 +8,15 @@
 
 ⚠️ **Under Development** ⚠️
 
-Python implementation for the UCell algorithm
+In single-cell RNA-seq analysis, gene signature (or “module”) scoring constitutes a simple yet powerful approach to evaluate the strength of biological signals – typically associated to a specific cell type or biological process – in a transcriptome.
+
+UCell is a computational method for evaluating gene signatures in single-cell datasets. UCell signature scores, based on the Mann-Whitney U statistic, are robust to dataset size and heterogeneity, and their calculation demands less computing time and memory than other available methods, enabling the processing of large datasets in a few minutes even on machines with limited computing power. pyUCell is the python implementation for the UCell algorithm, also available for R - Bioconductor](https://bioconductor.org/packages/UCell/) and [GitHub](https://github.com/carmonalab/UCell)
 
 ## Getting started
 
-Please refer to the [documentation][],
-in particular, the [API documentation][].
+Please see installation instructions below, and refer to the [documentation][].
 
 ## Installation
-
-You need to have Python 3.10 or newer installed on your system.
-If you don't have Python installed, we recommend installing [uv][].
 
 
 <!--
@@ -36,9 +34,9 @@ pip install git+ssh://git@github.com/carmonalab/pyucell.git@master
 ```
 
 
-#### Test the installation
+### Test the installation
 ```python
-import pyucell
+import pyucell as uc
 import scanpy as sc
 
 adata = sc.datasets.pbmc3k()
@@ -48,34 +46,32 @@ signatures = {
     'B_cell': ['MS4A1', 'CD79A', 'CD79B']
 }
 
-pyucell.compute_ucell_scores(adata, signatures=signatures, chunk_size=500)
+uc.compute_ucell_scores(adata, signatures=signatures, chunk_size=500)
 ```
 
-3. Visualize results e.g. on UMAP
+## Tutorials and how-to
 
-```python
-sc.pp.normalize_total(adata, target_sum=1e4)
-sc.pp.log1p(adata)
-sc.pp.scale(adata, max_value=10)
-sc.tl.pca(adata, svd_solver='arpack', n_comps=50)
-sc.pp.neighbors(adata)
-sc.tl.umap(adata)
+Have a look at the [documentation][] section; you may start from a [basic tutorial][]
 
-sc.pl.umap(adata, color='T_cell', cmap='viridis', ax=axes[0], size=20, show=False)
-sc.pl.umap(adata, color='B_cell', cmap='viridis', ax=axes[1], size=20, show=False)
-```
+### Get help
+
+Please address your questions and bug reports at: [UCell issues](https://github.com/carmonalab/pyucell/issues).
+
+### Citation
+
+UCell: robust and scalable single-cell gene signature scoring. Massimo Andreatta & Santiago J Carmona **(2021)** *CSBJ* https://doi.org/10.1016/j.csbj.2021.06.043
+
 
 ## Developer guide for scverse tools
 
 https://github.com/scverse/cookiecutter-scverse?tab=readme-ov-file
 
 
-
-[uv]: https://github.com/astral-sh/uv
 [scverse discourse]: https://discourse.scverse.org/
-[issue tracker]: https://github.com/mass-a/pyUCell/issues
-[tests]: https://github.com/mass-a/pyUCell/actions/workflows/test.yaml
-[documentation]: https://pyUCell.readthedocs.io
-[changelog]: https://pyUCell.readthedocs.io/en/latest/changelog.html
-[api documentation]: https://pyUCell.readthedocs.io/en/latest/api.html
-[pypi]: https://pypi.org/project/pyUCell
+[issue tracker]: https://github.com/carmonalab/pyucell/issues
+[tests]: https://github.com/mass-a/pyucell/actions/workflows/test.yaml
+[documentation]: https://pyucell.readthedocs.io
+[changelog]: https://pyucell.readthedocs.io/en/latest/changelog.html
+[api documentation]: https://pyucell.readthedocs.io/en/latest/api.html
+[pypi]: https://pypi.org/project/pyucell
+[basic tutorial]: https://pyucell.readthedocs.io/en/latest/notebooks/basic.html

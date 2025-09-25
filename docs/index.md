@@ -8,7 +8,6 @@
 
 changelog.md
 contributing.md
-references.md
 ```
 
 ```{toctree}
@@ -16,5 +15,5 @@ references.md
 :maxdepth: 2
 :caption: Examples & Tutorials
 
-notebooks/example
+notebooks/basic
 ```
