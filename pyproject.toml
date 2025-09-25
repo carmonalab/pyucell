@@ -27,6 +27,7 @@ dependencies = [
   "scipy",
   "scanpy",
   "joblib>=1.2",
+  "scanpy>=1.9",
   "session-info2",
 ]
 optional-dependencies.dev = [
@@ -50,7 +51,6 @@ optional-dependencies.doc = [
   "sphinxext-opengraph",
 ]
 optional-dependencies.test = [
-  "scanpy>=1.9",
   "coverage",
   "pytest",
   "pytest-cov", # For VS Code’s coverage functionality
