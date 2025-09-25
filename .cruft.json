@@ -9,7 +9,7 @@
       "project_description": "python implementation for the UCell algorithm",
       "author_full_name": "Massimo Andreatta",
       "author_email": "massimo.andreatta@unige.ch",
-      "github_user": "mass-a",
+      "github_user": "carmonalab",
       "github_repo": "pyUCell",
       "license": "MIT License",
       "ide_integration": true,

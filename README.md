@@ -71,7 +71,7 @@ https://github.com/scverse/cookiecutter-scverse?tab=readme-ov-file
 
 [scverse discourse]: https://discourse.scverse.org/
 [issue tracker]: https://github.com/carmonalab/pyucell/issues
-[tests]: https://github.com/mass-a/pyucell/actions/workflows/test.yaml
+[tests]: https://github.com/carmonalab/pyucell/actions/workflows/test.yaml
 [documentation]: https://pyucell.readthedocs.io
 [changelog]: https://pyucell.readthedocs.io/en/latest/changelog.html
 [api documentation]: https://pyucell.readthedocs.io/en/latest/api.html
