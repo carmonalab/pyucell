@@ -41,15 +41,22 @@ def _prepare_sig_indices(signatures: dict, genes: np.ndarray, missing_genes: str
     gene_idx = {g: i for i, g in enumerate(genes)}
     sig_indices = {}
 
+    gene_idx = {g: i for i, g in enumerate(genes)}
+    sig_indices = {}
+
     for sig_name, sig_genes in signatures.items():
-        pos_genes, _ = _parse_sig(sig_genes)
+        pos_genes, neg_genes = _parse_sig(sig_genes)
+
         if missing_genes == "impute":
-            idx = [gene_idx.get(g, -1) for g in pos_genes]
+            pos_idx = [gene_idx.get(g, -1) for g in pos_genes]
+            neg_idx = [gene_idx.get(g, -1) for g in neg_genes]
         elif missing_genes == "skip":
-            idx = [gene_idx[g] for g in pos_genes if g in gene_idx]
+            pos_idx = [gene_idx[g] for g in pos_genes if g in gene_idx]
+            neg_idx = [gene_idx[g] for g in neg_genes if g in gene_idx]
         else:
             raise ValueError("missing_genes must be 'impute' or 'skip'")
-        sig_indices[sig_name] = idx
+
+        sig_indices[sig_name] = {"pos": pos_idx, "neg": neg_idx}
 
     return sig_indices
 
@@ -81,15 +88,26 @@ def _calculate_U(ranks, idx, max_rank: int = 1500):
     return score
 
 
-def _score_chunk(ranks: sparse.csr_matrix, sig_indices: dict, max_rank: int = 1500):
+def _score_chunk(
+    ranks: sparse.csr_matrix,
+    sig_indices: dict,
+    w_neg: float = 1.0,
+    max_rank: int = 1500
+    ):
     n_genes, n_cells = ranks.shape
     n_signatures = len(sig_indices)
     scores = np.zeros((n_cells, n_signatures), dtype=np.float32)
 
-    for j, (_sig_name, idx) in enumerate(sig_indices.items()):
-        if len(idx) == 0:
-            continue
-        scores[:, j] = _calculate_U(ranks, idx, max_rank=max_rank)
+    for j, (_sig_name, idx_dict) in enumerate(sig_indices.items()):
+        pos_idx = idx_dict["pos"]
+        neg_idx = idx_dict["neg"]
+
+        pos_score = _calculate_U(ranks, pos_idx, max_rank=max_rank) if len(pos_idx) > 0 else 0.0
+        neg_score = _calculate_U(ranks, neg_idx, max_rank=max_rank) if len(neg_idx) > 0 else 0.0
+
+        score = pos_score - w_neg * neg_score
+        score[score < 0] = 0.0  # clip negatives
+        scores[:, j] = score
 
     return scores
 
@@ -102,6 +120,7 @@ def compute_ucell_scores(
     ties_method: str = "average",
     missing_genes: str = "impute",
     chunk_size: int = 500,
+    w_neg: float = 1.0,
     suffix: str = "_UCell",
     n_jobs: int = -1,
 ):
@@ -126,6 +145,8 @@ def compute_ucell_scores(
     chunk_size : int, optional
         The size of the blocks of cells to be processed at once. Avoids having large
         dense matrices in memory
+    w_neg : float
+        Weight on negative gene sets, when using signatures with positive and negative genes
     suffix : str, optional
         Suffix to append to column names in adata.obs.
     n_jobs : int, optional
@@ -157,7 +178,7 @@ def compute_ucell_scores(
         # compute ranks
         ranks_chunk = get_rankings(chunk_X, max_rank=max_rank, ties_method=ties_method)
         # get UCell scores for chunk
-        scores_chunk = _score_chunk(ranks_chunk, sig_indices, max_rank=max_rank)
+        scores_chunk = _score_chunk(ranks_chunk, sig_indices, w_neg = w_neg, max_rank=max_rank)
         return (start, end, scores_chunk)
 
     # Run chunks in parallel

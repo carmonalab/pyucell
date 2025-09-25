@@ -1,4 +1,4 @@
-# pyUCell: gene signature scoring for scRNA-seq (python implementation)
+# pyUCell: gene signature scoring for scRNA-seq 
 
 [![Tests][badge-tests]][tests]
 [![Documentation][badge-docs]][documentation]
@@ -10,7 +10,7 @@
 
 In single-cell RNA-seq analysis, gene signature (or “module”) scoring constitutes a simple yet powerful approach to evaluate the strength of biological signals – typically associated to a specific cell type or biological process – in a transcriptome.
 
-UCell is a computational method for evaluating gene signatures in single-cell datasets. UCell signature scores, based on the Mann-Whitney U statistic, are robust to dataset size and heterogeneity, and their calculation demands less computing time and memory than other available methods, enabling the processing of large datasets in a few minutes even on machines with limited computing power. pyUCell is the python implementation for the UCell algorithm, also available for R - Bioconductor](https://bioconductor.org/packages/UCell/) and [GitHub](https://github.com/carmonalab/UCell)
+UCell is a computational method for evaluating gene signatures in single-cell datasets. UCell signature scores, based on the Mann-Whitney U statistic, are robust to dataset size and heterogeneity, and their calculation demands less computing time and memory than other available methods, enabling the processing of large datasets in a few minutes even on machines with limited computing power. pyUCell is the python implementation for the UCell algorithm, also available for R - [Bioconductor](https://bioconductor.org/packages/UCell/) and [GitHub](https://github.com/carmonalab/UCell)
 
 ## Getting started
 
