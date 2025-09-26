@@ -181,8 +181,12 @@ def compute_ucell_scores(
         scores_chunk = _score_chunk(ranks_chunk, sig_indices, w_neg = w_neg, max_rank=max_rank)
         return (start, end, scores_chunk)
 
-    # Run chunks in parallel
-    results = Parallel(n_jobs=n_jobs, backend="loky")(delayed(process_chunk)(start, end) for start, end in chunks)
+    # Run chunks in serial or parallel
+    if n_jobs == 1:
+        results = [process_chunk(start, end) for start, end in chunks]
+    else:
+    results = Parallel(n_jobs=n_jobs, backend="loky")
+        (delayed(process_chunk)(start, end) for start, end in chunks)
 
     # Merge results back
     scores_all = np.zeros((n_cells, n_signatures), dtype=np.float32)

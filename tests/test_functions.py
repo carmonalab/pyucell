@@ -36,6 +36,14 @@ def test_wneg():
     pyucell.compute_ucell_scores(adata, signatures=signatures, w_neg=0.5)
     signature_columns_exist(adata, signatures) 
 
+def skip_missing():          
+    pyucell.compute_ucell_scores(adata, signatures=signatures, missing_genes="skip")
+    signature_columns_exist(adata, signatures)
+
+def test_serial():          
+    pyucell.compute_ucell_scores(adata, signatures=signatures, n_jobs=1)
+    signature_columns_exist(adata, signatures)
+
 
 def test_neg_signatures():        
     signatures_neg = {
