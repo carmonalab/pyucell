@@ -14,11 +14,11 @@ UCell is a computational method for evaluating gene signatures in single-cell da
 
 pyUCell is the python implementation for the UCell algorithm, also available for R - [Bioconductor](https://bioconductor.org/packages/UCell/) and [GitHub](https://github.com/carmonalab/UCell)
 
-## Getting started
+### Getting started
 
 Please see installation instructions below, and refer to the [documentation][].
 
-## Installation
+### Installation
 
 
 <!--
@@ -51,9 +51,9 @@ signatures = {
 uc.compute_ucell_scores(adata, signatures=signatures)
 ```
 
-## Tutorials and how-to
+### Tutorials and how-to
 
-Have a look at the [documentation][] section; you may start from a [basic tutorial][]
+Have a look at the [documentation][] section; you may start from a [basic tutorial][] or explore [some important pyUCell parameters][]
 
 ### Get help
 
@@ -64,7 +64,7 @@ Please address your questions and bug reports at: [UCell issues](https://github.
 UCell: robust and scalable single-cell gene signature scoring. Massimo Andreatta & Santiago J Carmona **(2021)** *CSBJ* https://doi.org/10.1016/j.csbj.2021.06.043
 
 
-## Developer guide for scverse tools
+### Developer guide for scverse tools
 
 https://github.com/scverse/cookiecutter-scverse?tab=readme-ov-file
 
@@ -77,3 +77,4 @@ https://github.com/scverse/cookiecutter-scverse?tab=readme-ov-file
 [api documentation]: https://pyucell.readthedocs.io/en/latest/api.html
 [pypi]: https://pypi.org/project/pyucell
 [basic tutorial]: https://pyucell.readthedocs.io/en/latest/notebooks/basic.html
+[some important pyUCell parameters]: https://pyucell.readthedocs.io/en/latest/notebooks/parameters.html
