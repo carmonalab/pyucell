@@ -8,8 +8,11 @@ and this project adheres to [Semantic Versioning][].
 [keep a changelog]: https://keepachangelog.com/en/1.0.0/
 [semantic versioning]: https://semver.org/spec/v2.0.0.html
 
-## [Unreleased]
+## Version 0.3.0
 
 ### Added
 
-- Basic tool, preprocessing and plotting functions
+	- First stable implementation of the UCell algorithm
+	- Implements gene ranking and calculation of signature scores
+	- Compared to the R version, we also include two different ways of handling missing genes ("impute" or "skip", see the missing_genes parameter)
+

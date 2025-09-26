@@ -17,5 +17,4 @@ notebooks/parameters
 
 api.md
 changelog.md
-contributing.md
 ```
