@@ -4,17 +4,18 @@
 ```{toctree}
 :hidden: true
 :maxdepth: 2
-:caption: Documentation
+:caption: Examples & Tutorials
 
-changelog.md
-contributing.md
+notebooks/basic
+notebooks/parameters
 ```
 
 ```{toctree}
 :hidden: true
 :maxdepth: 2
-:caption: Examples & Tutorials
+:caption: Documentation
 
-notebooks/basic
-notebooks/parameters
+api.md
+changelog.md
+contributing.md
 ```
