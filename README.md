@@ -7,7 +7,6 @@
 [badge-tests]: https://img.shields.io/github/actions/workflow/status/carmonalab/pyucell/test.yaml?branch=master
 [badge-docs]: https://img.shields.io/readthedocs/pyucell
 
-⚠️ **Under Development** ⚠️
 
 In single-cell RNA-seq analysis, gene signature (or “module”) scoring constitutes a simple yet powerful approach to evaluate the strength of biological signals – typically associated to a specific cell type or biological process – in a transcriptome.
 
@@ -21,16 +20,14 @@ Please see installation instructions below, and refer to the [documentation][].
 
 ### Installation
 
-
-<!--
-1) Install the latest release of `pyUCell` from [PyPI][]:
+Install the latest release of `pyUCell` from [PyPI][]:
 
 ```bash
-pip install pyUCell
+pip install pyucell
 ```
--->
 
-1. Install the latest development version:
+
+or, for the latest development version:
 
 ```bash
 pip install git+ssh://git@github.com/carmonalab/pyucell.git@master
