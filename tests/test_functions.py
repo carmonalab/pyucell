@@ -21,7 +21,7 @@ def test_ranks_from_anndata():
 
 def test_ranks_from_matrix():        
     X = sparse.random(1000, 20000, density=0.1, format='csr')
-    pyucell.get_rankings(X, max_rank=500)
+    ranks = pyucell.get_rankings(X, max_rank=500)
     assert isinstance(ranks, sparse.spmatrix)
 
 def test_compute_ucell():          
@@ -29,11 +29,11 @@ def test_compute_ucell():
     signature_columns_exist(adata, signatures)
 
 def test_chunk():          
-    pyucell.compute_ucell_scores(adata, signatures=signatures, chunk_suze=100)
+    pyucell.compute_ucell_scores(adata, signatures=signatures, chunk_size=100)
     signature_columns_exist(adata, signatures) 
 
 def test_neg_signatures():        
-    signature_neg = {
+    signatures_neg = {
         'T_cell': ['CD3D+', 'CD3E+', 'CD2+', 'LYZ-'],
         'B_cell': ['MS4A1+', 'CD79A+', 'CD2-']
     }
