@@ -185,10 +185,10 @@ def compute_ucell_scores(
     if n_jobs == 1:
         results = [process_chunk(start, end) for start, end in chunks]
     else:
-    results = Parallel(n_jobs=n_jobs, backend="loky")(
-        delayed(process_chunk)(start, end)
-        for start, end in chunks
-    )
+        results = Parallel(n_jobs=n_jobs, backend="loky")(
+            delayed(process_chunk)(start, end)
+            for start, end in chunks
+        )
 
     # Merge results back
     scores_all = np.zeros((n_cells, n_signatures), dtype=np.float32)
