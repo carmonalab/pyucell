@@ -32,6 +32,11 @@ def test_chunk():
     pyucell.compute_ucell_scores(adata, signatures=signatures, chunk_size=100)
     signature_columns_exist(adata, signatures) 
 
+def test_wneg():          
+    pyucell.compute_ucell_scores(adata, signatures=signatures, w_neg=0.5)
+    signature_columns_exist(adata, signatures) 
+
+
 def test_neg_signatures():        
     signatures_neg = {
         'T_cell': ['CD3D+', 'CD3E+', 'CD2+', 'LYZ-'],
@@ -39,6 +44,27 @@ def test_neg_signatures():
     }
     pyucell.compute_ucell_scores(adata, signatures=signatures_neg)
     signature_columns_exist(adata, signatures)  
+
+def test_missing_genes():        
+    signatures_miss = {
+        'T_cell': ['CD3D', 'CD3E', 'CD2'],
+        'B_cell': ['MS4A1', 'CD79A', 'notagene']
+    }
+    pyucell.compute_ucell_scores(adata, signatures=signatures_miss)
+    signature_columns_exist(adata, signatures)  
+
+def all_missing():        
+    signatures_miss = {
+        'T_cell': ['CD3D', 'CD3E', 'CD2'],
+        'B_cell': ['notagene1','notagene2']
+    }
+    pyucell.compute_ucell_scores(adata, signatures=signatures_miss)
+    signature_columns_exist(adata, signatures)  
+
+def layers():        
+    adata.layers["newlayer"] = adata.X.copy()
+    pyucell.compute_ucell_scores(adata, signatures=signatures, layer="newlayer")
+    signature_columns_exist(adata, signatures)
 
 
 
