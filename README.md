@@ -1,4 +1,4 @@
-# pyUCell: gene signature scoring for scRNA-seq 
+# pyUCell: Robust and scalable single-cell signature scoring 
 
 [![Tests][badge-tests]][tests]
 [![Documentation][badge-docs]][documentation]
