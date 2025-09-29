@@ -49,21 +49,21 @@ def test_serial():
 
 
 def test_neg_signatures():
-    signatures_neg = {"T_cell": ["CD3D+", "CD3E+", "CD2+", "LYZ-"], "B_cell": ["MS4A1+", "CD79A+", "CD2-"]}
+    signatures_neg = {"Tcell": ["CD3D+", "CD3E+", "CD2+", "LYZ-"], "Bcell": ["MS4A1+", "CD79A+", "CD2-"]}
     pyucell.compute_ucell_scores(adata, signatures=signatures_neg)
-    signature_columns_exist(adata, signatures)
+    signature_columns_exist(adata, signatures_neg)
 
 
 def test_missing_genes():
-    signatures_miss = {"T_cell": ["CD3D", "CD3E", "CD2"], "B_cell": ["MS4A1", "CD79A", "notagene"]}
+    signatures_miss = {"Tcell": ["CD3D", "CD3E", "CD2"], "Bcell": ["MS4A1", "CD79A", "notagene"]}
     pyucell.compute_ucell_scores(adata, signatures=signatures_miss)
-    signature_columns_exist(adata, signatures)
+    signature_columns_exist(adata, signatures_miss)
 
 
 def all_missing():
-    signatures_miss = {"T_cell": ["CD3D", "CD3E", "CD2"], "B_cell": ["notagene1", "notagene2"]}
+    signatures_miss = {"Tcell": ["CD3D", "CD3E", "CD2"], "Bcell": ["notagene1", "notagene2"]}
     pyucell.compute_ucell_scores(adata, signatures=signatures_miss)
-    signature_columns_exist(adata, signatures)
+    signature_columns_exist(adata, signatures_miss)
 
 
 def layers():
