@@ -16,3 +16,8 @@ and this project adheres to [Semantic Versioning][].
 	- Implements gene ranking and calculation of signature scores
 	- Compared to the R version, we also include two different ways of handling missing genes ("impute" or "skip", see the missing_genes parameter)
 
+## Version 0.4.0
+
+### Added
+
+	- Smoothing of UCell scores by k-neareast neighbors. Implemented in new function `smooth_knn_scores`

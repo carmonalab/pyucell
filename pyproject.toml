@@ -4,7 +4,7 @@ requires = [ "hatchling" ]
 
 [project]
 name = "pyucell"
-version = "0.3.0"
+version = "0.4.0"
 description = "Gene signature scoring for single-cell data"
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -24,10 +24,9 @@ classifiers = [
 ]
 dependencies = [
   "anndata",
-  "scipy",
-  "scanpy",
   "joblib>=1.2",
   "scanpy>=1.9",
+  "scipy",
   "session-info2",
 ]
 optional-dependencies.dev = [
