@@ -4,7 +4,7 @@ from scipy import sparse
 
 
 def smooth_knn_scores(
-    adata, obs_columns, k=10, use_rep="X_pca", decay: float = 0.1, up_only: bool = False, graph_key=None, suffix="kNN"
+    adata, obs_columns, k=10, use_rep="X_pca", decay: float = 0.1, up_only: bool = False, graph_key=None, suffix="_kNN"
 ):
     """
     Smooth per-cell signature scores by weight-averaging over k nearest neighbors.
@@ -28,7 +28,7 @@ def smooth_knn_scores(
         If provided, the name of a precomputed graph in adata.obsp to use
         (e.g. 'connectivities' or 'my_graph'). If None, compute neighbors with scanpy.
     suffix : str
-        Optional suffix for smoothed scores. By default '_knn' is appended.
+        Optional suffix for smoothed scores. By default '_kNN' is appended.
 
     Returns
     -------

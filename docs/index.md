@@ -8,6 +8,7 @@
 
 notebooks/basic
 notebooks/parameters
+notebooks/knn
 ```
 
 ```{toctree}
