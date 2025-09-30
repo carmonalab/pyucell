@@ -38,7 +38,7 @@ def test_wneg():
     signature_columns_exist(adata, signatures)
 
 
-def skip_missing():
+def test_skip_missing():
     pyucell.compute_ucell_scores(adata, signatures=signatures, missing_genes="skip")
     signature_columns_exist(adata, signatures)
 
@@ -60,44 +60,40 @@ def test_missing_genes():
     signature_columns_exist(adata, signatures_miss)
 
 
-def all_missing():
+def test_all_missing():
     signatures_miss = {"Tcell": ["CD3D", "CD3E", "CD2"], "Bcell": ["notagene1", "notagene2"]}
     pyucell.compute_ucell_scores(adata, signatures=signatures_miss)
     signature_columns_exist(adata, signatures_miss)
 
 
-def layers():
+def test_layers():
     adata.layers["newlayer"] = adata.X.copy()
     pyucell.compute_ucell_scores(adata, signatures=signatures, layer="newlayer")
     signature_columns_exist(adata, signatures)
 
 
-def knn_basic():
+def test_knn_basic():
     sc.pp.log1p(adata)
     sc.tl.pca(adata, svd_solver="arpack", n_comps=10)
 
     suffix1 = "_UCell"
+    suffix2 = "_kNN"
     obs_cols = [s + suffix1 for s in signatures.keys()]
     pyucell.compute_ucell_scores(adata, signatures=signatures, suffix=suffix1)
-
-    suffix2 = "_kNN"
-    knn_cols = [s + suffix2 for s in obs_cols]
     pyucell.smooth_knn_scores(adata, obs_columns=obs_cols, suffix=suffix2)
 
-    signature_columns_exist(adata, knn_cols)
+    signature_columns_exist(adata, obs_cols, suffix=suffix2)
 
 
-def knn_from_graph():
+def test_knn_from_graph():
     sc.pp.log1p(adata)
     sc.tl.pca(adata, svd_solver="arpack", n_comps=10)
     sc.pp.neighbors(adata, n_neighbors=10, use_rep="X_pca", key_added="customgraph")
 
     suffix1 = "_UCell"
+    suffix2 = "_kNN"
     obs_cols = [s + suffix1 for s in signatures.keys()]
     pyucell.compute_ucell_scores(adata, signatures=signatures, suffix=suffix1)
-
-    suffix2 = "_kNN"
-    knn_cols = [s + suffix2 for s in obs_cols]
     pyucell.smooth_knn_scores(adata, obs_columns=obs_cols, graph_key="customgraph_connectivities")
 
-    signature_columns_exist(adata, knn_cols)
+    signature_columns_exist(adata, obs_cols, suffix=suffix2)
