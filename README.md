@@ -1,8 +1,12 @@
 # pyUCell: Robust and scalable single-cell signature scoring 
 
+[![PyPI](https://img.shields.io/pypi/v/pyucell.svg)](https://pypi.org/project/pyucell/)
 [![Tests][badge-tests]][tests]
 [![Documentation][badge-docs]][documentation]
 [![codecov](https://codecov.io/gh/carmonalab/pyucell/graph/badge.svg?token=J4DES60KDX)](https://codecov.io/gh/carmonalab/pyucell)
+[![Downloads](https://static.pepy.tech/badge/pyucell)](https://pepy.tech/project/pyucell)
+[![Downloads](https://static.pepy.tech/badge/pyucell/month)](https://pepy.tech/project/pyucell)
+
 
 [badge-tests]: https://img.shields.io/github/actions/workflow/status/carmonalab/pyucell/test.yaml?branch=master
 [badge-docs]: https://img.shields.io/readthedocs/pyucell
