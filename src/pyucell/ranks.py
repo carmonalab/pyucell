@@ -1,8 +1,8 @@
-from warnings import warn
+import numpy as np
 from anndata import AnnData
 from scipy import sparse
 from scipy.stats import rankdata
-import numpy as np
+
 
 def get_rankings(
     data,
@@ -29,8 +29,7 @@ def get_rankings(
     ranks : csr_matrix of shape (genes, cells)
         Sparse matrix of ranks.
     """
-
-    # Accept either AnnData or matrix directly
+    # Load matrix
     if isinstance(data, AnnData):
         X = data.layers[layer] if layer else data.X
     else:
@@ -38,40 +37,54 @@ def get_rankings(
 
     n_cells, n_genes = X.shape
 
-    # Convert to array
-    is_sparse = sparse.issparse(X)
-    Xarr = X.toarray() if is_sparse else np.asarray(X)
+    # Store COO components per cell in lists of arrays
+    data_parts = []
+    row_parts = []
+    col_parts = []
 
-    # Allocate vectors, at most max_rank entries per cell
-    n_cells, n_genes = X.shape
-    nnz_per_cell = max_rank 
-    nnz_total = n_cells * nnz_per_cell
-
-    data = np.empty(nnz_total, dtype=np.int32)
-    rows = np.empty(nnz_total, dtype=np.int32)
-    cols = np.empty(nnz_total, dtype=np.int32)
-
-    #Calculate ranks, while keeping the matrix sparse
-    ptr = 0
     for j in range(n_cells):
-        col = Xarr[j, :].astype(float)
-        col[np.isnan(col)] = -np.inf
-        ranks = rankdata(-col, method=ties_method)
-        mask = ranks <= max_rank  #mask out ranks to impose sparsity
-        idx = np.nonzero(mask)[0]
-        rks = ranks[idx].astype(np.int32)
-        n = len(idx)
+        col = X[j, :]
+        if sparse.issparse(col):
+            col = col.toarray().ravel()
+        else:
+            col = np.asarray(col, dtype=float)
 
-        data[ptr:ptr+n] = rks
-        rows[ptr:ptr+n] = idx
-        cols[ptr:ptr+n] = j
-        ptr += n
+        # missing values
+        np.nan_to_num(col, copy=False)
 
-    # slice arrays to actual size
-    data = data[:ptr]
-    rows = rows[:ptr]
-    cols = cols[:ptr]
+        # Only rank non-zero elements
+        nz_idx = np.nonzero(col)[0]
+        if len(nz_idx) == 0:
+            continue
 
-    ranks_mat = sparse.coo_matrix((data, (rows,cols)), shape=(n_genes,n_cells)).tocsr()
-    
+        nz_vals = col[nz_idx]
+        ranks = rankdata(-nz_vals, method=ties_method).astype(np.int32)
+
+        keep_mask = ranks <= max_rank
+        kept_idx = nz_idx[keep_mask]
+        kept_ranks = ranks[keep_mask]
+
+        if len(kept_idx) > max_rank:
+            kept_idx = kept_idx[:max_rank]
+            kept_ranks = kept_ranks[:max_rank]
+
+        n = len(kept_idx)
+        if n == 0:
+            continue
+
+        # Convert to small NumPy arrays per cell
+        data_parts.append(kept_ranks)
+        row_parts.append(kept_idx)
+        col_parts.append(np.full(n, j, dtype=np.int32))
+
+    # All zeros
+    if not data_parts:
+        return sparse.csr_matrix((n_genes, n_cells), dtype=np.int32)
+
+    # Concatenate arrays only once at the end
+    data_arr = np.concatenate(data_parts).astype(np.int32)
+    rows_arr = np.concatenate(row_parts).astype(np.int32)
+    cols_arr = np.concatenate(col_parts).astype(np.int32)
+
+    ranks_mat = sparse.csr_matrix((data_arr, (rows_arr, cols_arr)), shape=(n_genes, n_cells))
     return ranks_mat

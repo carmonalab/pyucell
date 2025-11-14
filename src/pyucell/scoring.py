@@ -75,9 +75,12 @@ def _calculate_U(ranks, idx, max_rank: int = 1500):
 
     if len(present_idx) > 0:
         present_ranks = ranks[present_idx, :]
-        if sparse.issparse(present_ranks):
-            present_ranks = present_ranks.toarray()
-        present_ranks = np.asarray(present_ranks, dtype=np.float32)
+        # Always convert to dense safely
+        present_ranks = present_ranks.toarray() if sparse.issparse(present_ranks) else np.asarray(present_ranks)
+        # Ensure 2D shape even if single row
+        if present_ranks.ndim == 1:
+            present_ranks = present_ranks[np.newaxis, :]
+        present_ranks = present_ranks.astype(np.float32)
         # rank==0 is equivalent to max_rank (for sparsity)
         present_ranks[present_ranks == 0] = max_rank
         rank_sum += present_ranks.sum(axis=0)
@@ -88,12 +91,7 @@ def _calculate_U(ranks, idx, max_rank: int = 1500):
     return score
 
 
-def _score_chunk(
-    ranks: sparse.csr_matrix,
-    sig_indices: dict,
-    w_neg: float = 1.0,
-    max_rank: int = 1500
-    ):
+def _score_chunk(ranks: sparse.csr_matrix, sig_indices: dict, w_neg: float = 1.0, max_rank: int = 1500):
     n_genes, n_cells = ranks.shape
     n_signatures = len(sig_indices)
     scores = np.zeros((n_cells, n_signatures), dtype=np.float32)
@@ -178,17 +176,14 @@ def compute_ucell_scores(
         # compute ranks
         ranks_chunk = get_rankings(chunk_X, max_rank=max_rank, ties_method=ties_method)
         # get UCell scores for chunk
-        scores_chunk = _score_chunk(ranks_chunk, sig_indices, w_neg = w_neg, max_rank=max_rank)
+        scores_chunk = _score_chunk(ranks_chunk, sig_indices, w_neg=w_neg, max_rank=max_rank)
         return (start, end, scores_chunk)
 
     # Run chunks in serial or parallel
     if n_jobs == 1:
         results = [process_chunk(start, end) for start, end in chunks]
     else:
-        results = Parallel(n_jobs=n_jobs, backend="loky")(
-            delayed(process_chunk)(start, end)
-            for start, end in chunks
-        )
+        results = Parallel(n_jobs=n_jobs, backend="loky")(delayed(process_chunk)(start, end) for start, end in chunks)
 
     # Merge results back
     scores_all = np.zeros((n_cells, n_signatures), dtype=np.float32)

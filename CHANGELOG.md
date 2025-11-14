@@ -14,12 +14,18 @@ and this project adheres to [Semantic Versioning][].
 
 	- First stable implementation of the UCell algorithm
 	- Implements gene ranking and calculation of signature scores
-	- Compared to the R version, we also include two different ways of 
+	- Compared to the R version, we also include two different ways of
 	  handling missing genes ("impute" or "skip", see the missing_genes parameter)
 
 ## Version 0.4.0
 
 ### Added
 
-	- Smoothing of UCell scores by k-neareast neighbors. Implemented 
+	- Smoothing of UCell scores by k-neareast neighbors. Implemented
 	  in new function `smooth_knn_scores()`
+
+## Version 0.5.0
+
+### Added
+
+	- Fixed a bug in `get_rankings()` where ties spanning max_rank could cause broadcasting errors.
