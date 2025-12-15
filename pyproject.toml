@@ -25,6 +25,7 @@ classifiers = [
 dependencies = [
   "anndata",
   "joblib>=1.2",
+  "numpy>=1.23,<2",
   "scanpy>=1.9",
   "scipy",
   "session-info2",
