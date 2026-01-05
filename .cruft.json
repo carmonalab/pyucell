@@ -1,7 +1,7 @@
 {
   "template": "https://github.com/scverse/cookiecutter-scverse",
-  "commit": "9d275b8a25284cfe0b0a592374e5a75426128081",
-  "checkout": null,
+  "commit": "6ff5b92b5d44ea6d8a88e47538475718d467db95",
+  "checkout": "v0.7.0",
   "context": {
     "cookiecutter": {
       "project_name": "pyUCell",
@@ -36,7 +36,8 @@
         "trim_blocks": true
       },
       "_template": "https://github.com/scverse/cookiecutter-scverse",
-      "_commit": "9d275b8a25284cfe0b0a592374e5a75426128081"
+      "_commit": "6ff5b92b5d44ea6d8a88e47538475718d467db95"
+
     }
   },
   "directory": null

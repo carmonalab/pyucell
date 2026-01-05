@@ -6,21 +6,26 @@
 
 # -- Path setup --------------------------------------------------------------
 
+import shutil
 import sys
 from datetime import datetime
 from importlib.metadata import metadata
 from pathlib import Path
 
+from sphinxcontrib import katex
+
 HERE = Path(__file__).parent
 SRC = HERE.parent / "src"
-sys.path.insert(0, str(SRC)) 
+sys.path.insert(0, str(SRC))
 sys.path.insert(0, str(HERE / "extensions"))
 
 # -- Project information -----------------------------------------------------
 
 # NOTE: If you installed your project in editable mode, this might be stale.
 #       If this is the case, reinstall it to refresh the metadata
-info = metadata("pyucell")
+
+info = metadata("pyUCell")
+project = "pyucell"
 project_name = "pyucell"
 author = "Massimo Andreatta"
 copyright = f"{datetime.now():%Y}, {author}."
@@ -56,9 +61,9 @@ extensions = [
     "sphinx.ext.autosummary",
     "sphinx.ext.napoleon",
     "sphinxcontrib.bibtex",
+    "sphinxcontrib.katex",
     "sphinx_autodoc_typehints",
     "sphinx_tabs.tabs",
-    "sphinx.ext.mathjax",
     "IPython.sphinxext.ipython_console_highlighting",
     "sphinxext.opengraph",
     *[p.stem for p in (HERE / "extensions").glob("*.py")],
@@ -94,7 +99,8 @@ source_suffix = {
 }
 
 intersphinx_mapping = {
-    "python": ("https://docs.python.org/3", None),
+    # TODO: replace `3.13` with `3` once ReadTheDocs supports building with Python 3.14
+    "python": ("https://docs.python.org/3.13", None),
     "anndata": ("https://anndata.readthedocs.io/en/stable/", None),
     "scanpy": ("https://scanpy.readthedocs.io/en/stable/", None),
     "numpy": ("https://numpy.org/doc/stable/", None),
@@ -115,7 +121,7 @@ html_theme = "sphinx_book_theme"
 html_static_path = ["_static"]
 html_css_files = ["css/custom.css"]
 
-html_title = project_name
+html_title = project
 
 html_theme_options = {
     "repository_url": repository_url,
@@ -125,6 +131,7 @@ html_theme_options = {
 }
 
 pygments_style = "default"
+katex_prerender = shutil.which(katex.NODEJS_BINARY) is not None
 
 nitpick_ignore = [
     # If building the documentation fails because of a missing link that is outside your control,
