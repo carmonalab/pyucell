@@ -24,10 +24,9 @@ sys.path.insert(0, str(HERE / "extensions"))
 # NOTE: If you installed your project in editable mode, this might be stale.
 #       If this is the case, reinstall it to refresh the metadata
 
-info = metadata("pyUCell")
-project = "pyucell"
-project_name = "pyucell"
-author = "Massimo Andreatta"
+info = metadata("pyucell")
+project = info["Name"]
+author = info["Author"]
 copyright = f"{datetime.now():%Y}, {author}."
 version = info["Version"]
 urls = dict(pu.split(", ") for pu in info.get_all("Project-URL"))
@@ -44,7 +43,7 @@ needs_sphinx = "4.0"
 html_context = {
     "display_github": True,  # Integrate GitHub
     "github_user": "carmonalab",
-    "github_repo": project_name,
+    "github_repo": project,
     "github_version": "master",
     "conf_py_path": "/docs/",
 }
