@@ -63,7 +63,7 @@ doc = [
 optional-dependencies.test = [
   "coverage",
   "pytest",
-  "pytest-cov", # For VS Code’s coverage functionality
+  "pytest-cov",
 ]
 # https://docs.pypi.org/project_metadata/#project-urls
 urls.Documentation = "https://pyUCell.readthedocs.io/"
