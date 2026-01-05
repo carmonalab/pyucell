@@ -60,16 +60,6 @@ doc = [
   "sphinxext-opengraph",
 ]
 
-optional-dependencies.test = [
-  "coverage",
-  "pytest",
-  "pytest-cov",
-]
-# https://docs.pypi.org/project_metadata/#project-urls
-urls.Documentation = "https://pyUCell.readthedocs.io/"
-urls.Homepage = "https://github.com/carmonalab/pyUCell"
-urls.Source = "https://github.com/carmonalab/pyUCell"
-
 [tool.hatch.build]
 exclude = [
   "docs*",
