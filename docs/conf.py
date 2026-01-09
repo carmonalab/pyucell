@@ -12,7 +12,7 @@ from datetime import datetime
 from importlib.metadata import metadata
 from pathlib import Path
 
-from sphinxcontrib import katex
+import sphinxcontrib.katex as katex
 
 HERE = Path(__file__).parent
 SRC = HERE.parent / "src"
