@@ -57,6 +57,8 @@ uc.compute_ucell_scores(adata, signatures=signatures)
 
 Have a look at the [documentation][] section; you may start from a [basic tutorial][] or explore [some important pyUCell parameters][]
 
+For a comparison with the R version of UCell on the same scanpy test data, see [this notebook](https://carmonalab.github.io/UCell_demo/UCell_anndata.html)
+
 ### Get help
 
 Please address your questions and bug reports at: [UCell issues](https://github.com/carmonalab/pyucell/issues).
