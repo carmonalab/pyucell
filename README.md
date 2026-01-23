@@ -59,6 +59,8 @@ Have a look at the [documentation][] section; you may start from a [basic tutori
 
 For a comparison with the R version of UCell on the same scanpy test data, see [this notebook](https://carmonalab.github.io/UCell_demo/UCell_anndata.html)
 
+For an assessment of the running time of pyUCell, and parameters affecting speed see: [pyUCell timing](https://carmonalab.github.io/pyucell_test/pyucell_timing.html)
+
 ### Get help
 
 Please address your questions and bug reports at: [UCell issues](https://github.com/carmonalab/pyucell/issues).
