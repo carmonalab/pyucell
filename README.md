@@ -67,7 +67,9 @@ Please address your questions and bug reports at: [UCell issues](https://github.
 
 ### Citation
 
-UCell: robust and scalable single-cell gene signature scoring. Massimo Andreatta & Santiago J Carmona **(2021)** *CSBJ* https://doi.org/10.1016/j.csbj.2021.06.043
+* UCell and pyUCell: single-cell gene signature scoring for R and Python. Massimo Andreatta & Santiago J Carmona **(2026)** *Bioinformatics* https://doi.org/10.1093/bioinformatics/btag055
+
+* UCell: robust and scalable single-cell gene signature scoring. Massimo Andreatta & Santiago J Carmona **(2021)** *CSBJ* https://doi.org/10.1016/j.csbj.2021.06.043
 
 
 ### Developer guide for scverse tools
