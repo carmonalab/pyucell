@@ -1,4 +1,4 @@
-# pyUCell: Robust and scalable single-cell signature scoring 
+# pyUCell: Robust and scalable single-cell signature scoring
 
 [![PyPI](https://img.shields.io/pypi/v/pyucell.svg)](https://pypi.org/project/pyucell/)
 [![Tests][badge-tests]][tests]
@@ -67,9 +67,10 @@ Please address your questions and bug reports at: [UCell issues](https://github.
 
 ### Citation
 
-* UCell and pyUCell: single-cell gene signature scoring for R and Python. Massimo Andreatta & Santiago J Carmona **(2026)** *Bioinformatics* https://doi.org/10.1093/bioinformatics/btag055
+* UCell and pyUCell: single-cell gene signature scoring for R and Python. Massimo Andreatta & Santiago J Carmona (2026) *Bioinformatics* - [doi.org/10.1093/bioinformatics/btag055](https://doi.org/10.1093/bioinformatics/btag055)
 
-* UCell: robust and scalable single-cell gene signature scoring. Massimo Andreatta & Santiago J Carmona **(2021)** *CSBJ* https://doi.org/10.1016/j.csbj.2021.06.043
+* UCell: robust and scalable single-cell gene signature scoring. Massimo Andreatta & Santiago J Carmona (2021) *CSBJ* - [doi.org/10.1016/j.csbj.2021.06.043](https://doi.org/10.1016/j.csbj.2021.06.043)
+
 
 
 ### Developer guide for scverse tools
