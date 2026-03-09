@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 from anndata import AnnData
 from joblib import Parallel, delayed
 from scipy import sparse
@@ -191,5 +192,6 @@ def compute_ucell_scores(
         scores_all[start:end, :] = scores_chunk
 
     # Store scores in adata.obs with suffix
-    for j, sig_name in enumerate(signatures.keys()):
-        adata.obs[f"{sig_name}{suffix}"] = scores_all[:, j]
+    cols = [f"{sig}{suffix}" for sig in signatures.keys()]
+    scores_df = pd.DataFrame(scores_all, index=adata.obs_names, columns=cols)
+    adata.obs = pd.concat([adata.obs, scores_df], axis=1)
