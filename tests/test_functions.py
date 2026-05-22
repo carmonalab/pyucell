@@ -1,3 +1,4 @@
+import numpy as np
 import scanpy as sc
 from scipy import sparse
 import pytest
@@ -133,4 +134,54 @@ def test_knn_invalud(adata_with_scores, signatures):
         pyucell.smooth_knn_scores(adata_with_scores, obs_columns=obs_cols, graph_key="not_a_graph")
 
 
+# ---------------------------------------------------------------------------
+# Optional torch backend
+# ---------------------------------------------------------------------------
 
+torch = pytest.importorskip("torch", reason="torch not installed; skipping GPU backend tests")
+
+
+def _torch_devices():
+    devs = ["cpu"]
+    if torch.cuda.is_available():
+        devs.append("cuda")
+    mps = getattr(torch.backends, "mps", None)
+    if mps is not None and mps.is_available():
+        devs.append("mps")
+    return devs
+
+
+@pytest.mark.parametrize("device", _torch_devices())
+def test_compute_ucell_torch_matches_cpu(adata, signatures, device):
+    # CPU reference uses ties='min' so it matches the torch backend's ordinal/min semantics.
+    cpu_ad = adata.copy()
+    pyucell.compute_ucell_scores(cpu_ad, signatures=signatures, ties_method="min")
+    gpu_ad = adata.copy()
+    pyucell.compute_ucell_scores(gpu_ad, signatures=signatures, ties_method="min", device=device)
+    for sig in signatures:
+        col = f"{sig}_UCell"
+        np.testing.assert_allclose(
+            gpu_ad.obs[col].to_numpy(),
+            cpu_ad.obs[col].to_numpy(),
+            atol=1e-5,
+        )
+
+
+def test_compute_ucell_torch_rejects_average_ties(adata, signatures):
+    with pytest.raises(ValueError, match="ties_method"):
+        pyucell.compute_ucell_scores(adata, signatures=signatures, ties_method="average", device="cpu")
+
+
+@pytest.mark.parametrize("device", _torch_devices())
+def test_smooth_knn_torch_matches_cpu(adata_with_scores, signatures, device):
+    cols = [f"{s}_UCell" for s in signatures]
+    cpu_ad = adata_with_scores.copy()
+    pyucell.smooth_knn_scores(cpu_ad, obs_columns=cols, suffix="_kNN_cpu")
+    gpu_ad = adata_with_scores.copy()
+    pyucell.smooth_knn_scores(gpu_ad, obs_columns=cols, suffix="_kNN_gpu", device=device)
+    for col in cols:
+        np.testing.assert_allclose(
+            gpu_ad.obs[f"{col}_kNN_gpu"].to_numpy(),
+            cpu_ad.obs[f"{col}_kNN_cpu"].to_numpy(),
+            atol=1e-5,
+        )
