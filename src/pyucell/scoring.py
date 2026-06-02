@@ -43,9 +43,6 @@ def _prepare_sig_indices(signatures: dict, genes: np.ndarray, missing_genes: str
     gene_idx = {g: i for i, g in enumerate(genes)}
     sig_indices = {}
 
-    gene_idx = {g: i for i, g in enumerate(genes)}
-    sig_indices = {}
-
     for sig_name, sig_genes in signatures.items():
         pos_genes, neg_genes = _parse_sig(sig_genes)
 
@@ -112,12 +109,8 @@ def _score_chunk(ranks: sparse.csr_matrix, sig_indices: dict, w_neg: float = 1.0
     return scores
 
 
-def _calculate_U_torch(ranks_dense, idx_tensor, n_missing: int, max_rank: int): # pragma: no cover
-    """Torch equivalent of ``_calculate_U`` operating on a dense (n_genes, n_cells) tensor.
-
-    ``idx_tensor`` already excludes the ``-1`` placeholders; ``n_missing`` is
-    their count.
-    """
+def _calculate_U_torch(ranks_dense, idx_tensor, n_missing: int, max_rank: int):  # pragma: no cover
+    """Torch equivalent of ``_calculate_U`` operating on a dense (n_genes, n_cells) tensor."""
     torch = import_torch()
     lgt = idx_tensor.numel() + n_missing
     n_cells = ranks_dense.shape[1]
@@ -135,7 +128,7 @@ def _calculate_U_torch(ranks_dense, idx_tensor, n_missing: int, max_rank: int): 
     return 1.0 - (rank_sum - s_min) / (s_max - s_min)
 
 
-def _score_chunk_torch(ranks_dense, sig_index_tensors, w_neg: float, max_rank: int): # pragma: no cover
+def _score_chunk_torch(ranks_dense, sig_index_tensors, w_neg: float, max_rank: int):  # pragma: no cover
     torch = import_torch()
     n_cells = ranks_dense.shape[1]
     n_signatures = len(sig_index_tensors)
@@ -171,7 +164,7 @@ def _score_chunk_torch(ranks_dense, sig_index_tensors, w_neg: float, max_rank: i
     return scores
 
 
-def _build_sig_index_tensors(sig_indices, device): # pragma: no cover
+def _build_sig_index_tensors(sig_indices, device):  # pragma: no cover
     """Move signature indices onto ``device``; split into (present_idx_tensor, n_missing)."""
     torch = import_torch()
     out = {}
@@ -183,7 +176,7 @@ def _build_sig_index_tensors(sig_indices, device): # pragma: no cover
             present = idx_arr[idx_arr != -1]
             out[sig_name][key] = (
                 torch.as_tensor(present, dtype=torch.long, device=device),
-                n_missing,
+                n_missing,  # Retained as primitive Python int scalar
             )
     return out
 
@@ -238,10 +231,76 @@ def compute_ucell_scores(
     Returns
     -------
     Adds signature scores in adata.obs
-
     """
-    genes = adata.var_names.to_numpy()
-    n_cells = adata.n_obs
+    # Compute ranking matrix wrapped in an AnnData instance
+    ranks_adata = get_rankings(adata, layer=layer, max_rank=max_rank, ties_method=ties_method, device=device)
+
+    # Delegate the work cleanly to the matrix scorer
+    scores_df = compute_ucell_from_rankings(
+        ranks_adata=ranks_adata,
+        signatures=signatures,
+        max_rank=max_rank,
+        missing_genes=missing_genes,
+        chunk_size=chunk_size,
+        w_neg=w_neg,
+        suffix=suffix,
+        n_jobs=n_jobs,
+        device=device,
+    )
+    # Drop columns from adata.obs that are about to be overwritten
+    adata.obs = adata.obs.drop(columns=scores_df.columns, errors="ignore")
+    # Concatenate into adata.obs
+    adata.obs = pd.concat([adata.obs, scores_df], axis=1)
+
+
+def compute_ucell_from_rankings(
+    ranks_adata: AnnData,
+    signatures: dict[str, list[str]],
+    max_rank: int = 1500,
+    missing_genes: str = "impute",
+    chunk_size: int | None = None,
+    w_neg: float = 1.0,
+    suffix: str = "_UCell",
+    n_jobs: int = -1,
+    device: str | None = None,
+) -> pd.DataFrame:
+    """
+    Compute UCell scores directly from a pre-computed rank AnnData object.
+
+    Parameters
+    ----------
+    ranks_adata : AnnData
+        Pre-computed gene ranks, calculated using pyucell.get_rankings()
+    signatures:  Dict[str, List[str]]
+        A dictionary of signatures, where the names of the entries are the signature names
+    max_rank : int, optional
+        Cap ranks at this value (ranks > max_rank are dropped for sparsity).
+    missing_genes : str
+        "impute": missing genes get a placeholder -1 (to be treated as max_rank)
+        "skip": missing genes are simply removed
+    chunk_size : int, optional
+        Size of the cell blocks processed at once. Defaults to 500 on CPU and
+        5000 when ``device`` is set (GPUs benefit from larger batches).
+    w_neg : float
+        Weight on negative gene sets, when using signatures with positive and negative genes
+    suffix : str, optional
+        Suffix to append to column names in adata.obs.
+    n_jobs : int, optional
+        Number of parallel jobs (ignored when ``device`` is set; GPU chunks
+        run serially to avoid multi-process CUDA init).
+    device : str | None, optional
+        ``None`` (default) → CPU path with joblib parallelism.
+        ``"cpu"`` / ``"cuda"`` / ``"mps"`` / ``"auto"`` → PyTorch backend.
+        Requires the ``pyucell[gpu]`` extra.
+
+    Returns
+    -------
+    pd.DataFrame
+        A dataframe of UCell scores for the signature set, indexed by cell identifiers.
+    """
+    # Gather coordinates straight from the AnnData object
+    genes = ranks_adata.var_names.to_numpy()
+    n_cells = ranks_adata.n_obs
     n_signatures = len(signatures)
     scores_all = np.zeros((n_cells, n_signatures), dtype=np.float32)
 
@@ -253,21 +312,32 @@ def compute_ucell_scores(
     starts = list(range(0, n_cells, chunk_size))
     chunks = [(s, min(s + chunk_size, n_cells)) for s in starts]
 
-    if device is not None: # pragma: no cover
+    # GPU execution engine
+    if device is not None:  # pragma: no cover
         dev = resolve_device(device)
         sig_index_tensors = _build_sig_index_tensors(sig_indices, dev)
 
         for start, end in chunks:
-            chunk_X = adata.layers[layer][start:end, :] if layer else adata.X[start:end, :]
-            ranks_dense = _rankings_torch(chunk_X, max_rank=max_rank, ties_method=ties_method, device=dev)
+            # Slice cell rows out, transpose to (genes x cells) for _score_chunk_torch
+            chunk_ranks = ranks_adata.X[start:end, :].T
+            if sparse.issparse(chunk_ranks):
+                chunk_ranks = chunk_ranks.toarray()
+
+            torch = import_torch()
+            ranks_dense = torch.as_tensor(chunk_ranks, device=dev, dtype=torch.int32)
+
             scores_chunk = _score_chunk_torch(ranks_dense, sig_index_tensors, w_neg=w_neg, max_rank=max_rank)
             scores_all[start:end, :] = scores_chunk.cpu().numpy()
-    else:
 
+    # CPU execution engine
+    else:
         def process_chunk(start, end):
-            chunk_X = adata.layers[layer][start:end, :] if layer else adata.X[start:end, :]
-            ranks_chunk = get_rankings(chunk_X, max_rank=max_rank, ties_method=ties_method)
-            scores_chunk = _score_chunk(ranks_chunk, sig_indices, w_neg=w_neg, max_rank=max_rank)
+            # Slice cell rows out, transpose to (genes x cells) for _score_chunk
+            chunk_ranks = ranks_adata.X[start:end, :].T
+            if not sparse.issparse(chunk_ranks):
+                chunk_ranks = sparse.csr_matrix(chunk_ranks)
+
+            scores_chunk = _score_chunk(chunk_ranks, sig_indices, w_neg=w_neg, max_rank=max_rank)
             return (start, end, scores_chunk)
 
         if n_jobs == 1:
@@ -281,5 +351,4 @@ def compute_ucell_scores(
             scores_all[start:end, :] = scores_chunk
 
     cols = [f"{sig}{suffix}" for sig in signatures.keys()]
-    scores_df = pd.DataFrame(scores_all, index=adata.obs_names, columns=cols)
-    adata.obs = pd.concat([adata.obs, scores_df], axis=1)
+    return pd.DataFrame(scores_all, index=ranks_adata.obs_names, columns=cols)

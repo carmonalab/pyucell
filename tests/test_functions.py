@@ -3,6 +3,7 @@ import scanpy as sc
 from scipy import sparse
 import pytest
 import pyucell
+import pandas as pd
 
 @pytest.fixture(scope="session")
 def base_adata():
@@ -38,19 +39,21 @@ def signature_columns_exist(adata, signatures, suffix="_UCell"):
 
 def test_ranks_from_anndata(adata):
     ranks = pyucell.get_rankings(adata)
-    assert isinstance(ranks, sparse.spmatrix)
-
+    assert isinstance(ranks, AnnData)
 
 def test_ranks_from_matrix():
     X = sparse.random(1000, 20000, density=0.1, format="csr")
     ranks = pyucell.get_rankings(X, max_rank=500)
-    assert isinstance(ranks, sparse.spmatrix)
+    assert isinstance(ranks, AnnData)
 
+def test_compute_from_ranks(adata, signatures):
+    ranks = pyucell.get_rankings(adata, max_rank=500)
+    scores_df = pyucell.compute_ucell_from_rankings(ranks_adata=ranks, signatures=signatures)
+    assert isinstance(scores_df, pd.DataFrame)
 
 def test_compute_ucell(adata, signatures):
     pyucell.compute_ucell_scores(adata, signatures=signatures)
     signature_columns_exist(adata, signatures)
-
 
 def test_chunk(adata, signatures):
     pyucell.compute_ucell_scores(adata, signatures=signatures, chunk_size=100)
