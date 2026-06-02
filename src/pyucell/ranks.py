@@ -3,12 +3,15 @@ from anndata import AnnData
 from scipy import sparse
 from scipy.stats import rankdata
 
+from pyucell._torch_utils import import_torch, resolve_device, to_torch_dense
+
 
 def get_rankings(
     data,
     layer: str = None,
     max_rank: int = 1500,
     ties_method: str = "average",
+    device: str | None = None,
 ) -> sparse.csr_matrix:
     """
     Compute per-cell ranks of genes for an AnnData object.
@@ -22,7 +25,12 @@ def get_rankings(
     max_rank : int, optional
         Cap ranks at this value (ranks > max_rank are dropped for sparsity).
     ties_method : str, optional
-        Passed to scipy.stats.rankdata.
+        Passed to scipy.stats.rankdata on the CPU path. The torch backend
+        (``device != None``) only supports ``"min"`` and ``"ordinal"``.
+    device : str | None, optional
+        ``None`` (default) → CPU path using ``scipy.stats.rankdata``.
+        ``"cpu"`` / ``"cuda"`` / ``"mps"`` / ``"auto"`` → PyTorch backend on
+        that device. Requires the ``pyucell[gpu]`` extra.
 
     Returns
     -------
@@ -34,6 +42,12 @@ def get_rankings(
         X = data.layers[layer] if layer else data.X
     else:
         X = data
+
+    if device is not None:
+        dev = resolve_device(device)
+        ranks_dense = _rankings_torch(X, max_rank=max_rank, ties_method=ties_method, device=dev)
+        ranks_np = ranks_dense.cpu().numpy()
+        return sparse.csr_matrix(ranks_np, dtype=np.int32)
 
     n_cells, n_genes = X.shape
 
@@ -88,3 +102,51 @@ def get_rankings(
 
     ranks_mat = sparse.csr_matrix((data_arr, (rows_arr, cols_arr)), shape=(n_genes, n_cells))
     return ranks_mat
+
+
+def _rankings_torch(X, max_rank: int, ties_method: str, device):
+    """Compute the (n_genes, n_cells) rank matrix as a dense torch tensor.
+
+    Returns a dense int32 tensor on ``device``. Zero-valued (and capped)
+    entries are represented as 0, matching the CSR convention used downstream.
+    """
+    torch = import_torch()
+
+    if ties_method not in ("min", "ordinal"):
+        raise ValueError(
+            f"ties_method={ties_method!r} is not supported with device={device}. "
+            "Use ties_method='min' or 'ordinal' for the torch backend "
+            "(scipy's 'average' is not yet implemented on GPU)."
+        )
+
+    Xd = to_torch_dense(X, device=device, dtype=torch.float32)  # (n_cells, n_genes)
+    n_cells, n_genes = Xd.shape
+
+    neg_inf = torch.tensor(float("-inf"), dtype=Xd.dtype, device=device)
+    masked = torch.where(Xd > 0, Xd, neg_inf)
+
+    # Sort descending. argsort gives ordinal ranks directly; we add a 'min'
+    # adjustment in a second pass for tied groups.
+    order = torch.argsort(masked, dim=1, descending=True, stable=True)  # (n_cells, n_genes)
+
+    arange_g = torch.arange(1, n_genes + 1, dtype=torch.int32, device=device).expand(n_cells, -1)
+
+    if ties_method == "ordinal":
+        ordinal_ranks = arange_g
+    else:  # 'min'
+        sorted_vals, _ = torch.sort(masked, dim=1, descending=True, stable=True)
+        is_new = torch.ones_like(sorted_vals, dtype=torch.bool)
+        is_new[:, 1:] = sorted_vals[:, 1:] != sorted_vals[:, :-1]
+        positions = torch.arange(1, n_genes + 1, dtype=torch.int32, device=device).expand(n_cells, -1)
+        start_pos = positions * is_new.to(torch.int32)
+        ordinal_ranks, _ = torch.cummax(start_pos, dim=1)
+
+    ranks = torch.empty((n_cells, n_genes), dtype=torch.int32, device=device)
+    ranks.scatter_(1, order, ordinal_ranks)
+
+    # Drop zeros (sparse marker) and anything beyond max_rank
+    zero_mask = Xd == 0
+    ranks = torch.where(zero_mask | (ranks > max_rank), torch.zeros_like(ranks), ranks)
+
+    # Return as (n_genes, n_cells) to match the rest of the pipeline.
+    return ranks.T.contiguous()

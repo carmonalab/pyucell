@@ -29,3 +29,21 @@ and this project adheres to [Semantic Versioning][].
 ### Added
 
 	- Fixed a bug in `get_rankings()` where ties spanning max_rank could cause broadcasting errors.
+
+## Version 0.7.0
+
+### Added
+
+	- Optional PyTorch GPU backend for `get_rankings`, `compute_ucell_scores`, and
+	  `smooth_knn_scores`. Enable via a new `device` keyword argument
+	  (`"auto" | "cuda" | "mps" | "cpu"`). Default behavior is unchanged.
+	- New optional install extra: `pip install pyucell[gpu]` (adds `torch>=2.1`).
+	- Vectorised neighbour-weight construction in `smooth_knn_scores`: the per-cell
+	  Python loop is replaced by a single sparse matmul, faster even on CPU.
+
+### Notes
+
+	- The torch backend supports `ties_method="min"` and `"ordinal"`. Passing
+	  `"average"` together with `device=` raises a clear `ValueError`.
+	- When `device` is set, chunks run serially (no joblib subprocesses) and
+	  the default `chunk_size` is 5000 to better saturate the GPU.

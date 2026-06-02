@@ -4,7 +4,8 @@ from anndata import AnnData
 from joblib import Parallel, delayed
 from scipy import sparse
 
-from pyucell.ranks import get_rankings
+from pyucell._torch_utils import import_torch, resolve_device
+from pyucell.ranks import _rankings_torch, get_rankings
 
 
 def _parse_sig(sig):
@@ -111,6 +112,82 @@ def _score_chunk(ranks: sparse.csr_matrix, sig_indices: dict, w_neg: float = 1.0
     return scores
 
 
+def _calculate_U_torch(ranks_dense, idx_tensor, n_missing: int, max_rank: int):
+    """Torch equivalent of ``_calculate_U`` operating on a dense (n_genes, n_cells) tensor.
+
+    ``idx_tensor`` already excludes the ``-1`` placeholders; ``n_missing`` is
+    their count.
+    """
+    torch = import_torch()
+    lgt = idx_tensor.numel() + n_missing
+    n_cells = ranks_dense.shape[1]
+    device = ranks_dense.device
+
+    rank_sum = torch.full((n_cells,), float(n_missing * max_rank), dtype=torch.float32, device=device)
+    if idx_tensor.numel() > 0:
+        present = ranks_dense.index_select(0, idx_tensor).to(torch.float32)
+        max_rank_t = torch.tensor(float(max_rank), dtype=torch.float32, device=device)
+        present = torch.where(present == 0, max_rank_t, present)
+        rank_sum = rank_sum + present.sum(dim=0)
+
+    s_min = lgt * (lgt + 1) / 2.0
+    s_max = lgt * max_rank
+    return 1.0 - (rank_sum - s_min) / (s_max - s_min)
+
+
+def _score_chunk_torch(ranks_dense, sig_index_tensors, w_neg: float, max_rank: int):
+    torch = import_torch()
+    n_cells = ranks_dense.shape[1]
+    n_signatures = len(sig_index_tensors)
+    device = ranks_dense.device
+    scores = torch.zeros((n_cells, n_signatures), dtype=torch.float32, device=device)
+
+    for j, (_sig_name, idx_dict) in enumerate(sig_index_tensors.items()):
+        pos_idx, pos_missing = idx_dict["pos"]
+        neg_idx, neg_missing = idx_dict["neg"]
+
+        pos_score = (
+            _calculate_U_torch(ranks_dense, pos_idx, pos_missing, max_rank)
+            if (pos_idx.numel() + pos_missing) > 0
+            else None
+        )
+        neg_score = (
+            _calculate_U_torch(ranks_dense, neg_idx, neg_missing, max_rank)
+            if (neg_idx.numel() + neg_missing) > 0
+            else None
+        )
+
+        if pos_score is None and neg_score is None:
+            continue
+        if pos_score is None:
+            score = -w_neg * neg_score
+        elif neg_score is None:
+            score = pos_score
+        else:
+            score = pos_score - w_neg * neg_score
+
+        scores[:, j] = torch.clamp(score, min=0.0)
+
+    return scores
+
+
+def _build_sig_index_tensors(sig_indices, device):
+    """Move signature indices onto ``device``; split into (present_idx_tensor, n_missing)."""
+    torch = import_torch()
+    out = {}
+    for sig_name, idx_dict in sig_indices.items():
+        out[sig_name] = {}
+        for key in ("pos", "neg"):
+            idx_arr = np.asarray(idx_dict[key], dtype=np.int64)
+            n_missing = int((idx_arr == -1).sum())
+            present = idx_arr[idx_arr != -1]
+            out[sig_name][key] = (
+                torch.as_tensor(present, dtype=torch.long, device=device),
+                n_missing,
+            )
+    return out
+
+
 def compute_ucell_scores(
     adata: AnnData,
     signatures: dict[str, list[str]],
@@ -118,10 +195,11 @@ def compute_ucell_scores(
     max_rank: int = 1500,
     ties_method: str = "average",
     missing_genes: str = "impute",
-    chunk_size: int = 500,
+    chunk_size: int | None = None,
     w_neg: float = 1.0,
     suffix: str = "_UCell",
     n_jobs: int = -1,
+    device: str | None = None,
 ):
     """
     Compute UCell scores for an AnnData object.
@@ -137,19 +215,25 @@ def compute_ucell_scores(
     max_rank : int, optional
         Cap ranks at this value (ranks > max_rank are dropped for sparsity).
     ties_method : str, optional
-        Passed to scipy.stats.rankdata.
+        Passed to scipy.stats.rankdata on the CPU path. The torch backend
+        (``device != None``) only supports ``"min"`` and ``"ordinal"``.
     missing_genes : str
         "impute": missing genes get a placeholder -1 (to be treated as max_rank)
         "skip": missing genes are simply removed
     chunk_size : int, optional
-        The size of the blocks of cells to be processed at once. Avoids having large
-        dense matrices in memory
+        Size of the cell blocks processed at once. Defaults to 500 on CPU and
+        5000 when ``device`` is set (GPUs benefit from larger batches).
     w_neg : float
         Weight on negative gene sets, when using signatures with positive and negative genes
     suffix : str, optional
         Suffix to append to column names in adata.obs.
     n_jobs : int, optional
-        Number of parallel jobs
+        Number of parallel jobs (ignored when ``device`` is set; GPU chunks
+        run serially to avoid multi-process CUDA init).
+    device : str | None, optional
+        ``None`` (default) → CPU path with joblib parallelism.
+        ``"cpu"`` / ``"cuda"`` / ``"mps"`` / ``"auto"`` → PyTorch backend.
+        Requires the ``pyucell[gpu]`` extra.
 
     Returns
     -------
@@ -161,37 +245,41 @@ def compute_ucell_scores(
     n_signatures = len(signatures)
     scores_all = np.zeros((n_cells, n_signatures), dtype=np.float32)
 
-    # Precompute signature indices once
     sig_indices = _prepare_sig_indices(signatures, genes, missing_genes=missing_genes)
 
-    # Split indices into chunks
+    if chunk_size is None:
+        chunk_size = 5000 if device is not None else 500
+
     starts = list(range(0, n_cells, chunk_size))
     chunks = [(s, min(s + chunk_size, n_cells)) for s in starts]
 
-    # Iterate over cell chunks
-    def process_chunk(start, end):
-        if layer:
-            chunk_X = adata.layers[layer][start:end, :]
-        else:
-            chunk_X = adata.X[start:end, :]
-        # compute ranks
-        ranks_chunk = get_rankings(chunk_X, max_rank=max_rank, ties_method=ties_method)
-        # get UCell scores for chunk
-        scores_chunk = _score_chunk(ranks_chunk, sig_indices, w_neg=w_neg, max_rank=max_rank)
-        return (start, end, scores_chunk)
+    if device is not None:
+        dev = resolve_device(device)
+        sig_index_tensors = _build_sig_index_tensors(sig_indices, dev)
 
-    # Run chunks in serial or parallel
-    if n_jobs == 1:
-        results = [process_chunk(start, end) for start, end in chunks]
+        for start, end in chunks:
+            chunk_X = adata.layers[layer][start:end, :] if layer else adata.X[start:end, :]
+            ranks_dense = _rankings_torch(chunk_X, max_rank=max_rank, ties_method=ties_method, device=dev)
+            scores_chunk = _score_chunk_torch(ranks_dense, sig_index_tensors, w_neg=w_neg, max_rank=max_rank)
+            scores_all[start:end, :] = scores_chunk.cpu().numpy()
     else:
-        results = Parallel(n_jobs=n_jobs, backend="loky")(delayed(process_chunk)(start, end) for start, end in chunks)
 
-    # Merge results back
-    scores_all = np.zeros((n_cells, n_signatures), dtype=np.float32)
-    for start, end, scores_chunk in results:
-        scores_all[start:end, :] = scores_chunk
+        def process_chunk(start, end):
+            chunk_X = adata.layers[layer][start:end, :] if layer else adata.X[start:end, :]
+            ranks_chunk = get_rankings(chunk_X, max_rank=max_rank, ties_method=ties_method)
+            scores_chunk = _score_chunk(ranks_chunk, sig_indices, w_neg=w_neg, max_rank=max_rank)
+            return (start, end, scores_chunk)
 
-    # Store scores in adata.obs with suffix
+        if n_jobs == 1:
+            results = [process_chunk(start, end) for start, end in chunks]
+        else:
+            results = Parallel(n_jobs=n_jobs, backend="loky")(
+                delayed(process_chunk)(start, end) for start, end in chunks
+            )
+
+        for start, end, scores_chunk in results:
+            scores_all[start:end, :] = scores_chunk
+
     cols = [f"{sig}{suffix}" for sig in signatures.keys()]
     scores_df = pd.DataFrame(scores_all, index=adata.obs_names, columns=cols)
     adata.obs = pd.concat([adata.obs, scores_df], axis=1)
