@@ -134,14 +134,24 @@ def test_knn_invalud(adata_with_scores, signatures):
         pyucell.smooth_knn_scores(adata_with_scores, obs_columns=obs_cols, graph_key="not_a_graph")
 
 
+
 # ---------------------------------------------------------------------------
 # Optional torch backend
 # ---------------------------------------------------------------------------
 
-torch = pytest.importorskip("torch", reason="torch not installed; skipping GPU backend tests")
+try:
+    import torch
+    HAS_TORCH = True
+except ImportError:
+    HAS_TORCH = False
+
+# Create a reusable decorator for torch-dependent tests
+requires_torch = pytest.mark.skipif(not HAS_TORCH, reason="torch not installed; skipping GPU backend tests")
 
 
 def _torch_devices():
+    if not HAS_TORCH:
+        return []
     devs = ["cpu"]
     if torch.cuda.is_available():
         devs.append("cuda")
@@ -151,6 +161,8 @@ def _torch_devices():
     return devs
 
 
+# Apply the decorator to your torch test cases
+@requires_torch
 @pytest.mark.parametrize("device", _torch_devices())
 def test_compute_ucell_torch_matches_cpu(adata, signatures, device):
     # CPU reference uses ties='min' so it matches the torch backend's ordinal/min semantics.
@@ -167,11 +179,13 @@ def test_compute_ucell_torch_matches_cpu(adata, signatures, device):
         )
 
 
+@requires_torch
 def test_compute_ucell_torch_rejects_average_ties(adata, signatures):
     with pytest.raises(ValueError, match="ties_method"):
         pyucell.compute_ucell_scores(adata, signatures=signatures, ties_method="average", device="cpu")
 
 
+@requires_torch
 @pytest.mark.parametrize("device", _torch_devices())
 def test_smooth_knn_torch_matches_cpu(adata_with_scores, signatures, device):
     cols = [f"{s}_UCell" for s in signatures]
