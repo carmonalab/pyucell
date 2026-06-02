@@ -43,7 +43,10 @@ and this project adheres to [Semantic Versioning][].
 
 ### Notes
 
-	- The torch backend supports `ties_method="min"` and `"ordinal"`. Passing
+	- Credit to Erick Armingol (https://orcid.org/0000-0002-1546-9165) for GPU
+	  support.
+	- The torch backend supports `ties_method="min"` and `"ordinal"` (for CUDA), only
+	  `"ordinal"` for MPS. Passing
 	  `"average"` together with `device=` raises a clear `ValueError`.
 	- When `device` is set, chunks run serially (no joblib subprocesses) and
 	  the default `chunk_size` is 5000 to better saturate the GPU.

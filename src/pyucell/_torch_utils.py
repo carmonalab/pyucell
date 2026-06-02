@@ -3,6 +3,8 @@
 Importing this module never imports torch. torch is only resolved when one of
 the helpers is actually called, so users without the ``gpu`` extra installed
 incur no overhead.
+
+Credit to Erick Armingol (https://orcid.org/0000-0002-1546-9165) for GPU support.
 """
 
 from __future__ import annotations
