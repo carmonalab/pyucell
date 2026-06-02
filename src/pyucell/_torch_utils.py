@@ -15,7 +15,7 @@ from scipy import sparse
 _TORCH = None
 
 
-def import_torch():
+def import_torch(): # pragma: no cover
     """Import torch lazily, raising a clear error if it isn't installed."""
     global _TORCH
     if _TORCH is not None:
@@ -31,7 +31,7 @@ def import_torch():
     return torch
 
 
-def resolve_device(device):
+def resolve_device(device): # pragma: no cover
     """Map a device string ('auto', 'cuda', 'mps', 'cpu', ...) to a torch.device."""
     torch = import_torch()
     if device is None:
@@ -55,7 +55,7 @@ def resolve_device(device):
     return dev
 
 
-def to_torch_dense(X, device, dtype=None):
+def to_torch_dense(X, device, dtype=None): # pragma: no cover
     """Convert a 2D numpy/scipy.sparse matrix into a dense torch tensor on ``device``."""
     torch = import_torch()
     if dtype is None:

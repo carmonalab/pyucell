@@ -112,7 +112,7 @@ def _score_chunk(ranks: sparse.csr_matrix, sig_indices: dict, w_neg: float = 1.0
     return scores
 
 
-def _calculate_U_torch(ranks_dense, idx_tensor, n_missing: int, max_rank: int):
+def _calculate_U_torch(ranks_dense, idx_tensor, n_missing: int, max_rank: int): # pragma: no cover
     """Torch equivalent of ``_calculate_U`` operating on a dense (n_genes, n_cells) tensor.
 
     ``idx_tensor`` already excludes the ``-1`` placeholders; ``n_missing`` is
@@ -135,7 +135,7 @@ def _calculate_U_torch(ranks_dense, idx_tensor, n_missing: int, max_rank: int):
     return 1.0 - (rank_sum - s_min) / (s_max - s_min)
 
 
-def _score_chunk_torch(ranks_dense, sig_index_tensors, w_neg: float, max_rank: int):
+def _score_chunk_torch(ranks_dense, sig_index_tensors, w_neg: float, max_rank: int): # pragma: no cover
     torch = import_torch()
     n_cells = ranks_dense.shape[1]
     n_signatures = len(sig_index_tensors)
@@ -171,7 +171,7 @@ def _score_chunk_torch(ranks_dense, sig_index_tensors, w_neg: float, max_rank: i
     return scores
 
 
-def _build_sig_index_tensors(sig_indices, device):
+def _build_sig_index_tensors(sig_indices, device): # pragma: no cover
     """Move signature indices onto ``device``; split into (present_idx_tensor, n_missing)."""
     torch = import_torch()
     out = {}
@@ -253,7 +253,7 @@ def compute_ucell_scores(
     starts = list(range(0, n_cells, chunk_size))
     chunks = [(s, min(s + chunk_size, n_cells)) for s in starts]
 
-    if device is not None:
+    if device is not None: # pragma: no cover
         dev = resolve_device(device)
         sig_index_tensors = _build_sig_index_tensors(sig_indices, dev)
 

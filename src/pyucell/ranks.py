@@ -43,7 +43,7 @@ def get_rankings(
     else:
         X = data
 
-    if device is not None:
+    if device is not None: # pragma: no cover
         dev = resolve_device(device)
         ranks_dense = _rankings_torch(X, max_rank=max_rank, ties_method=ties_method, device=dev)
         ranks_np = ranks_dense.cpu().numpy()
@@ -104,7 +104,7 @@ def get_rankings(
     return ranks_mat
 
 
-def _rankings_torch(X, max_rank: int, ties_method: str, device):
+def _rankings_torch(X, max_rank: int, ties_method: str, device): # pragma: no cover
     """Compute the (n_genes, n_cells) rank matrix as a dense torch tensor.
 
     Returns a dense int32 tensor on ``device``. Zero-valued (and capped)

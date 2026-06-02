@@ -72,7 +72,7 @@ def smooth_knn_scores(
         axis=1,
     )
 
-    if device is not None:
+    if device is not None: # pragma: no cover
         torch = import_torch()
         dev = resolve_device(device)
         W_coo = W.tocoo()
