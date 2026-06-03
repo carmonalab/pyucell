@@ -30,7 +30,7 @@ and this project adheres to [Semantic Versioning][].
 
 	- Fixed a bug in `get_rankings()` where ties spanning max_rank could cause broadcasting errors.
 
-## Version 0.7.0
+## Version 0.7.1
 
 ### Added
 
