@@ -11,7 +11,7 @@ def get_rankings(
     layer: str = None,
     max_rank: int = 1500,
     ties_method: str = "average",
-    device: str | None = None,
+    device: str | None = "cpu",
 ) -> sparse.csr_matrix:
     """
     Compute per-cell ranks of genes for an AnnData object.
@@ -28,9 +28,9 @@ def get_rankings(
         Passed to scipy.stats.rankdata on the CPU path. The torch backend
         (``device != None``) only supports ``"min"`` and ``"ordinal"``.
     device : str | None, optional
-        ``None`` (default) → CPU path using ``scipy.stats.rankdata``.
-        ``"cpu"`` / ``"cuda"`` / ``"mps"`` / ``"auto"`` → PyTorch backend on
-        that device. Requires the ``pyucell[gpu]`` extra.
+        ``"cpu"`` or ``None`` (default): CPU path with joblib parallelism (avoids PyTorch).
+        ``"cuda"`` / ``"mps"`` / ``"auto"``: PyTorch backend for hardware acceleration.
+        Requires the ``pyucell[gpu]`` extra.
 
     Returns
     -------
@@ -43,12 +43,20 @@ def get_rankings(
     else:
         X = data
 
-    if device is not None: # pragma: no cover
+    use_torch = device is not None and device not in ("cpu", "CPU")
+
+    if use_torch:  # pragma: no cover
         dev = resolve_device(device)
         ranks_dense = _rankings_torch(X, max_rank=max_rank, ties_method=ties_method, device=dev)
         ranks_np = ranks_dense.cpu().numpy()
         return sparse.csr_matrix(ranks_np, dtype=np.int32)
 
+    else:
+        return _rankings_cpu(X, max_rank=max_rank, ties_method=ties_method)
+
+
+def _rankings_cpu(X, max_rank: int, ties_method: str):
+    """Compute the (n_genes, n_cells) rank matrix"""
     n_cells, n_genes = X.shape
 
     # Store COO components per cell in lists of arrays
@@ -104,7 +112,7 @@ def get_rankings(
     return ranks_mat
 
 
-def _rankings_torch(X, max_rank: int, ties_method: str, device): # pragma: no cover
+def _rankings_torch(X, max_rank: int, ties_method: str, device):  # pragma: no cover
     """Compute the (n_genes, n_cells) rank matrix as a dense torch tensor.
 
     Returns a dense int32 tensor on ``device``. Zero-valued (and capped)

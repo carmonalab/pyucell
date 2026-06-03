@@ -112,7 +112,7 @@ def _score_chunk(ranks: sparse.csr_matrix, sig_indices: dict, w_neg: float = 1.0
     return scores
 
 
-def _calculate_U_torch(ranks_dense, idx_tensor, n_missing: int, max_rank: int): # pragma: no cover
+def _calculate_U_torch(ranks_dense, idx_tensor, n_missing: int, max_rank: int):  # pragma: no cover
     """Torch equivalent of ``_calculate_U`` operating on a dense (n_genes, n_cells) tensor.
 
     ``idx_tensor`` already excludes the ``-1`` placeholders; ``n_missing`` is
@@ -135,7 +135,7 @@ def _calculate_U_torch(ranks_dense, idx_tensor, n_missing: int, max_rank: int): 
     return 1.0 - (rank_sum - s_min) / (s_max - s_min)
 
 
-def _score_chunk_torch(ranks_dense, sig_index_tensors, w_neg: float, max_rank: int): # pragma: no cover
+def _score_chunk_torch(ranks_dense, sig_index_tensors, w_neg: float, max_rank: int):  # pragma: no cover
     torch = import_torch()
     n_cells = ranks_dense.shape[1]
     n_signatures = len(sig_index_tensors)
@@ -171,7 +171,7 @@ def _score_chunk_torch(ranks_dense, sig_index_tensors, w_neg: float, max_rank: i
     return scores
 
 
-def _build_sig_index_tensors(sig_indices, device): # pragma: no cover
+def _build_sig_index_tensors(sig_indices, device):  # pragma: no cover
     """Move signature indices onto ``device``; split into (present_idx_tensor, n_missing)."""
     torch = import_torch()
     out = {}
@@ -199,7 +199,7 @@ def compute_ucell_scores(
     w_neg: float = 1.0,
     suffix: str = "_UCell",
     n_jobs: int = -1,
-    device: str | None = None,
+    device: str | None = "cpu",
 ):
     """
     Compute UCell scores for an AnnData object.
@@ -231,8 +231,8 @@ def compute_ucell_scores(
         Number of parallel jobs (ignored when ``device`` is set; GPU chunks
         run serially to avoid multi-process CUDA init).
     device : str | None, optional
-        ``None`` (default) → CPU path with joblib parallelism.
-        ``"cpu"`` / ``"cuda"`` / ``"mps"`` / ``"auto"`` → PyTorch backend.
+        ``"cpu"`` or ``None`` (default): CPU path with joblib parallelism (avoids PyTorch).
+        ``"cuda"`` / ``"mps"`` / ``"auto"``: PyTorch backend for hardware acceleration.
         Requires the ``pyucell[gpu]`` extra.
 
     Returns
@@ -245,15 +245,17 @@ def compute_ucell_scores(
     n_signatures = len(signatures)
     scores_all = np.zeros((n_cells, n_signatures), dtype=np.float32)
 
+    use_torch = device is not None and device not in ("cpu", "CPU")
+
     sig_indices = _prepare_sig_indices(signatures, genes, missing_genes=missing_genes)
 
     if chunk_size is None:
-        chunk_size = 5000 if device is not None else 500
+        chunk_size = 5000 if use_torch else 500
 
     starts = list(range(0, n_cells, chunk_size))
     chunks = [(s, min(s + chunk_size, n_cells)) for s in starts]
 
-    if device is not None: # pragma: no cover
+    if use_torch:  # pragma: no cover
         dev = resolve_device(device)
         sig_index_tensors = _build_sig_index_tensors(sig_indices, dev)
 
@@ -282,4 +284,8 @@ def compute_ucell_scores(
 
     cols = [f"{sig}{suffix}" for sig in signatures.keys()]
     scores_df = pd.DataFrame(scores_all, index=adata.obs_names, columns=cols)
+
+    # Drop columns from adata.obs that are about to be overwritten
+    adata.obs = adata.obs.drop(columns=scores_df.columns, errors="ignore")
+    # Concatenate into adata.obs
     adata.obs = pd.concat([adata.obs, scores_df], axis=1)
