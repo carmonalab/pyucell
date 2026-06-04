@@ -148,7 +148,11 @@ def _rankings_torch(X, max_rank: int, ties_method: str, device):  # pragma: no c
         is_new[:, 1:] = sorted_vals[:, 1:] != sorted_vals[:, :-1]
         positions = torch.arange(1, n_genes + 1, dtype=torch.int32, device=device).expand(n_cells, -1)
         start_pos = positions * is_new.to(torch.int32)
-        ordinal_ranks, _ = torch.cummax(start_pos, dim=1)
+        # torch.cummax is not implemented on MPS; fall back to CPU for this op
+        if device.type == "mps":
+            ordinal_ranks = torch.cummax(start_pos.cpu(), dim=1)[0].to(device)
+        else:
+            ordinal_ranks, _ = torch.cummax(start_pos, dim=1)
 
     ranks = torch.empty((n_cells, n_genes), dtype=torch.int32, device=device)
     ranks.scatter_(1, order, ordinal_ranks)
