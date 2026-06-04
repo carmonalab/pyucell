@@ -52,10 +52,14 @@ and this project adheres to [Semantic Versioning][].
 	- When `device` is set, chunks run serially (no joblib subprocesses) and
 	  the default `chunk_size` is 5000 to better saturate the GPU.
 
-## Version 0.7.2
+## Version 0.7.3
 
 ### Added
 
+	- Implement scoring from pre-computed rank matrix. This can be useful to test
+	  new signature without recalculating ranks, but can demand more memory as it
+	  requires storing the full rank matrix (unlike the regular pipeline, which
+	  utilizes chunks of cells).
 	- Fixed some edge cases `s_max == s_min`
 	  (e.g. a 1-gene signature with `max_rank=1`) and `missing_genes="skip"` and all
 	  signature genes are absent from the dataset (both pos and neg index lists empty).
