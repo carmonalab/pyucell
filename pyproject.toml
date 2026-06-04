@@ -4,7 +4,7 @@ requires = [ "hatchling" ]
 
 [project]
 name = "pyucell"
-version = "0.7.2"
+version = "0.7.3"
 description = "Gene signature scoring for single-cell data"
 readme = "README.md"
 license = { file = "LICENSE" }

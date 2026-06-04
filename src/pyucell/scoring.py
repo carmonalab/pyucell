@@ -288,3 +288,55 @@ def compute_ucell_scores(
     adata.obs = adata.obs.drop(columns=scores_df.columns, errors="ignore")
     # Concatenate into adata.obs
     adata.obs = pd.concat([adata.obs, scores_df], axis=1)
+
+
+def compute_scores_from_ranks(
+    adata: AnnData,
+    ranks: sparse.csr_matrix,
+    signatures: dict[str, list[str]],
+    max_rank: int = 1500,
+    missing_genes: str = "impute",
+    w_neg: float = 1.0,
+    suffix: str = "_UCell",
+) -> None:
+    """
+    Compute UCell scores from a pre-computed rank matrix.
+
+    Use this when scoring multiple signature sets against the same dataset:
+    compute ranks once with ``get_rankings``, then call this function
+    for each set of signatures without re-ranking.
+
+    Parameters
+    ----------
+    adata : AnnData
+        AnnData object whose obs will receive the scores. Must share
+        var_names and obs_names with the object used to compute ``ranks``.
+    ranks : csr_matrix of shape (n_genes, n_cells)
+        Pre-computed rank matrix from ``get_rankings``.
+    signatures : dict[str, list[str]]
+        Signature name → list of gene names.
+    max_rank : int
+        Must match the ``max_rank`` used in ``get_rankings``.
+    missing_genes : str
+        "impute": missing genes are treated as max_rank.
+        "skip": missing genes are excluded.
+    w_neg : float
+        Weight on negative gene sets.
+    suffix : str
+        Appended to each signature name when writing to adata.obs.
+    """
+    if ranks.shape != (adata.n_vars, adata.n_obs):
+        raise ValueError(
+            f"ranks shape {ranks.shape} does not match "
+            f"(adata.n_vars, adata.n_obs) = ({adata.n_vars}, {adata.n_obs})"
+        )
+
+    genes = adata.var_names.to_numpy()
+    sig_indices = _prepare_sig_indices(signatures, genes, missing_genes=missing_genes)
+    scores = _score_chunk(ranks, sig_indices, w_neg=w_neg, max_rank=max_rank)
+
+    cols = [f"{sig}{suffix}" for sig in signatures.keys()]
+    scores_df = pd.DataFrame(scores, index=adata.obs_names, columns=cols)
+
+    adata.obs = adata.obs.drop(columns=scores_df.columns, errors="ignore")
+    adata.obs = pd.concat([adata.obs, scores_df], axis=1)

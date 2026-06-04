@@ -18,5 +18,6 @@ import pyucell as uc
 
    pyucell.compute_ucell_scores
    pyucell.get_rankings
+   pyucell.compute_scores_from_ranks
    pyucell.smooth_knn_scores
 ```

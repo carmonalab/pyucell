@@ -136,6 +136,89 @@ def test_knn_invalud(adata_with_scores, signatures):
 
 
 # ---------------------------------------------------------------------------
+# compute_scores_from_ranks
+# ---------------------------------------------------------------------------
+
+def test_scores_from_ranks_matches_compute_ucell(adata, signatures):
+    ranks = pyucell.get_rankings(adata)
+    pyucell.compute_scores_from_ranks(adata, ranks, signatures=signatures)
+    ref = adata.copy()
+    pyucell.compute_ucell_scores(ref, signatures=signatures)
+    for sig in signatures:
+        col = f"{sig}_UCell"
+        np.testing.assert_allclose(
+            adata.obs[col].to_numpy(),
+            ref.obs[col].to_numpy(),
+            atol=1e-5,
+        )
+
+
+def test_scores_from_ranks_columns_exist(adata, signatures):
+    ranks = pyucell.get_rankings(adata)
+    pyucell.compute_scores_from_ranks(adata, ranks, signatures=signatures)
+    signature_columns_exist(adata, signatures)
+
+
+def test_scores_from_ranks_custom_suffix(adata, signatures):
+    ranks = pyucell.get_rankings(adata)
+    pyucell.compute_scores_from_ranks(adata, ranks, signatures=signatures, suffix="_score")
+    signature_columns_exist(adata, signatures, suffix="_score")
+
+
+def test_scores_from_ranks_reuse(adata):
+    sigs_a = {"Tcell": ["CD3D", "CD3E", "CD2"]}
+    sigs_b = {"Bcell": ["MS4A1", "CD79A", "CD79B"]}
+    ranks = pyucell.get_rankings(adata)
+    pyucell.compute_scores_from_ranks(adata, ranks, signatures=sigs_a)
+    pyucell.compute_scores_from_ranks(adata, ranks, signatures=sigs_b)
+    ref = adata.copy()
+    pyucell.compute_ucell_scores(ref, signatures={**sigs_a, **sigs_b})
+    for sig in {**sigs_a, **sigs_b}:
+        col = f"{sig}_UCell"
+        np.testing.assert_allclose(
+            adata.obs[col].to_numpy(),
+            ref.obs[col].to_numpy(),
+            atol=1e-5,
+        )
+
+
+def test_scores_from_ranks_neg_signatures(adata):
+    sigs = {"Tcell": ["CD3D+", "CD3E+", "LYZ-"]}
+    ranks = pyucell.get_rankings(adata)
+    pyucell.compute_scores_from_ranks(adata, ranks, signatures=sigs, w_neg=0.5)
+    ref = adata.copy()
+    pyucell.compute_ucell_scores(ref, signatures=sigs, w_neg=0.5)
+    np.testing.assert_allclose(
+        adata.obs["Tcell_UCell"].to_numpy(),
+        ref.obs["Tcell_UCell"].to_numpy(),
+        atol=1e-5,
+    )
+
+
+def test_scores_from_ranks_missing_genes_skip(adata):
+    sigs = {"Tcell": ["CD3D", "CD3E", "CD2"], "Bcell": ["MS4A1", "CD79A", "notagene"]}
+    ranks = pyucell.get_rankings(adata)
+    pyucell.compute_scores_from_ranks(adata, ranks, signatures=sigs, missing_genes="skip")
+    signature_columns_exist(adata, sigs)
+
+
+def test_scores_from_ranks_all_missing_skip(adata):
+    # Regression test: empty index lists with missing_genes="skip" previously
+    # raised TypeError when trying to subscript a Python float.
+    sigs = {"Tcell": ["CD3D", "CD3E"], "Ghost": ["notagene1", "notagene2"]}
+    ranks = pyucell.get_rankings(adata)
+    pyucell.compute_scores_from_ranks(adata, ranks, signatures=sigs, missing_genes="skip")
+    signature_columns_exist(adata, sigs)
+    assert (adata.obs["Ghost_UCell"] == 0.0).all()
+
+
+def test_scores_from_ranks_shape_mismatch(adata, signatures):
+    wrong_ranks = sparse.csr_matrix((adata.n_vars + 1, adata.n_obs))
+    with pytest.raises(ValueError, match="ranks shape"):
+        pyucell.compute_scores_from_ranks(adata, wrong_ranks, signatures=signatures)
+
+
+# ---------------------------------------------------------------------------
 # Optional torch backend
 # ---------------------------------------------------------------------------
 
