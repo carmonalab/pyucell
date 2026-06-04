@@ -54,8 +54,8 @@ def smooth_knn_scores(
     n_cells = adata.n_obs
 
     if graph_key is None:
-        sc.pp.neighbors(adata, n_neighbors=k, use_rep=use_rep)
-        graph_key = "connectivities"
+        sc.pp.neighbors(adata, n_neighbors=k, use_rep=use_rep, key_added="smooth_knn")
+        graph_key = "smooth_knn_connectivities"
     if graph_key not in adata.obsp:
         raise ValueError(f"Graph '{graph_key}' not found in adata.obsp")
 
@@ -63,6 +63,8 @@ def smooth_knn_scores(
     if not sparse.issparse(C):
         C = sparse.csr_matrix(C)
     C = C.tocsr()
+    C.setdiag(0)
+    C.eliminate_zeros()
 
     W = _build_weight_matrix(C, decay=decay, n_cells=n_cells)
 

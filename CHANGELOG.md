@@ -30,7 +30,8 @@ and this project adheres to [Semantic Versioning][].
 
 	- Fixed a bug in `get_rankings()` where ties spanning max_rank could cause broadcasting errors.
 
-## Version 0.7.1
+
+## Version 0.7.0
 
 ### Added
 
@@ -50,3 +51,17 @@ and this project adheres to [Semantic Versioning][].
 	  `"average"` together with `device=` raises a clear `ValueError`.
 	- When `device` is set, chunks run serially (no joblib subprocesses) and
 	  the default `chunk_size` is 5000 to better saturate the GPU.
+
+## Version 0.7.2
+
+### Added
+
+	- Fixed some edge cases `s_max == s_min`
+	  (e.g. a 1-gene signature with `max_rank=1`) and `missing_genes="skip"` and all
+	  signature genes are absent from the dataset (both pos and neg index lists empty).
+	- Fixed `smooth_knn_scores` silently overwriting `adata.obsp["connectivities"]`
+	  when called without `graph_key`. The internally computed graph is now stored
+	  under the dedicated key `"smooth_knn_connectivities"` to avoid clobbering
+	  pre-existing neighbor graphs used for UMAP/clustering.
+	- Fixed self-loop double-counting in `_build_weight_matrix`: diagonal entries
+	  are now stripped from the input graph before computing neighbor weights.

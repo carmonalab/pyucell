@@ -43,9 +43,6 @@ def _prepare_sig_indices(signatures: dict, genes: np.ndarray, missing_genes: str
     gene_idx = {g: i for i, g in enumerate(genes)}
     sig_indices = {}
 
-    gene_idx = {g: i for i, g in enumerate(genes)}
-    sig_indices = {}
-
     for sig_name, sig_genes in signatures.items():
         pos_genes, neg_genes = _parse_sig(sig_genes)
 
@@ -89,6 +86,8 @@ def _calculate_U(ranks, idx, max_rank: int = 1500):
 
     s_min = lgt * (lgt + 1) / 2.0
     s_max = lgt * max_rank
+    if s_max == s_min:
+        return np.zeros(n_cells, dtype=np.float32)
     score = 1.0 - (rank_sum - s_min) / (s_max - s_min)
     return score
 
@@ -102,8 +101,8 @@ def _score_chunk(ranks: sparse.csr_matrix, sig_indices: dict, w_neg: float = 1.0
         pos_idx = idx_dict["pos"]
         neg_idx = idx_dict["neg"]
 
-        pos_score = _calculate_U(ranks, pos_idx, max_rank=max_rank) if len(pos_idx) > 0 else 0.0
-        neg_score = _calculate_U(ranks, neg_idx, max_rank=max_rank) if len(neg_idx) > 0 else 0.0
+        pos_score = _calculate_U(ranks, pos_idx, max_rank=max_rank) if len(pos_idx) > 0 else np.zeros(n_cells, dtype=np.float32)
+        neg_score = _calculate_U(ranks, neg_idx, max_rank=max_rank) if len(neg_idx) > 0 else np.zeros(n_cells, dtype=np.float32)
 
         score = pos_score - w_neg * neg_score
         score[score < 0] = 0.0  # clip negatives

@@ -128,6 +128,7 @@ def _rankings_torch(X, max_rank: int, ties_method: str, device):  # pragma: no c
         )
 
     Xd = to_torch_dense(X, device=device, dtype=torch.float32)  # (n_cells, n_genes)
+    Xd = torch.nan_to_num(Xd, nan=0.0)
     n_cells, n_genes = Xd.shape
 
     neg_inf = torch.tensor(float("-inf"), dtype=Xd.dtype, device=device)

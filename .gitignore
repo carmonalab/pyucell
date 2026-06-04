@@ -15,6 +15,7 @@ __pycache__/
 /data/
 /node_modules/
 /.coverage*
+tests/data/
 
 # docs
 /docs/generated/
@@ -25,3 +26,7 @@ __pycache__/
 #uv
 uv.lock
 .python-version
+venv
+
+.ipynb_checkpoints
+test/.ipynb_checkpoints
