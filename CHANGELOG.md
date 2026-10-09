@@ -69,3 +69,17 @@ and this project adheres to [Semantic Versioning][].
 	  pre-existing neighbor graphs used for UMAP/clustering.
 	- Fixed self-loop double-counting in `_build_weight_matrix`: diagonal entries
 	  are now stripped from the input graph before computing neighbor weights.
+
+## Version 0.7.4
+
+### Fixed
+
+	- `get_rankings()` no longer truncates average ranks to integers. With
+	  `ties_method="average"` (the default), tied genes get fractional ranks
+	  (e.g. 812.5), which were previously rounded down, slightly inflating scores
+	  compared to the R version of UCell. Ranks are now stored as `float32`
+	  on the CPU path (same memory footprint as the previous `int32`).
+	- Fixed a bug in `get_rankings()` where, for cells with a group of tied genes
+	  spanning `max_rank`, the genes with the highest index in `var_names` were
+	  dropped from the ranking regardless of their expression. Tied groups are
+	  now kept (or dropped) as a whole, as in the R version.

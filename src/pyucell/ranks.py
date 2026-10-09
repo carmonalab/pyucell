@@ -35,7 +35,9 @@ def get_rankings(
     Returns
     -------
     ranks : csr_matrix of shape (genes, cells)
-        Sparse matrix of ranks.
+        Sparse matrix of ranks. On the CPU path ranks are stored as float32,
+        since ``ties_method="average"`` yields fractional ranks for tied genes;
+        the torch backend returns int32.
     """
     # Load matrix
     if isinstance(data, AnnData):
@@ -80,15 +82,13 @@ def _rankings_cpu(X, max_rank: int, ties_method: str):
             continue
 
         nz_vals = col[nz_idx]
-        ranks = rankdata(-nz_vals, method=ties_method).astype(np.int32)
+        # Keep ranks as floats: with ties_method="average", tied groups get fractional ranks
+        ranks = rankdata(-nz_vals, method=ties_method).astype(np.float32)
 
+        # A tied group straddling max_rank is kept or dropped as a whole
         keep_mask = ranks <= max_rank
         kept_idx = nz_idx[keep_mask]
         kept_ranks = ranks[keep_mask]
-
-        if len(kept_idx) > max_rank:
-            kept_idx = kept_idx[:max_rank]
-            kept_ranks = kept_ranks[:max_rank]
 
         n = len(kept_idx)
         if n == 0:
@@ -101,10 +101,10 @@ def _rankings_cpu(X, max_rank: int, ties_method: str):
 
     # All zeros
     if not data_parts:
-        return sparse.csr_matrix((n_genes, n_cells), dtype=np.int32)
+        return sparse.csr_matrix((n_genes, n_cells), dtype=np.float32)
 
     # Concatenate arrays only once at the end
-    data_arr = np.concatenate(data_parts).astype(np.int32)
+    data_arr = np.concatenate(data_parts)
     rows_arr = np.concatenate(row_parts).astype(np.int32)
     cols_arr = np.concatenate(col_parts).astype(np.int32)
 

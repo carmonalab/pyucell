@@ -1,8 +1,10 @@
 import numpy as np
+import pytest
 import scanpy as sc
 from scipy import sparse
-import pytest
+
 import pyucell
+
 
 @pytest.fixture(scope="session")
 def base_adata():
@@ -11,22 +13,23 @@ def base_adata():
     sc.pp.log1p(adata)
     return adata
 
+
 @pytest.fixture
 def adata(base_adata):
     # each test gets a fresh copy
     return base_adata.copy()
+
 
 @pytest.fixture(scope="session")
 def signatures():
     signatures = {"Tcell": ["CD3D", "CD3E", "CD2"], "Bcell": ["MS4A1", "CD79A", "CD79B"]}
     return signatures
 
+
 @pytest.fixture
-def adata_with_scores(adata, signatures):    
+def adata_with_scores(adata, signatures):
     sc.tl.pca(adata, svd_solver="arpack", n_comps=10)
     suffix1 = "_UCell"
-    suffix2 = "_kNN"
-    obs_cols = [s + suffix1 for s in signatures.keys()]
     pyucell.compute_ucell_scores(adata, signatures=signatures, suffix=suffix1)
     return adata.copy()
 
@@ -45,6 +48,41 @@ def test_ranks_from_matrix():
     X = sparse.random(1000, 20000, density=0.1, format="csr")
     ranks = pyucell.get_rankings(X, max_rank=500)
     assert isinstance(ranks, sparse.spmatrix)
+
+
+def test_ranks_average_ties_are_fractional():
+    # two genes tied for ranks 2 and 3 must both get 2.5
+    X = np.array([[5.0, 3.0, 3.0, 1.0, 0.0]])
+    ranks = pyucell.get_rankings(X, max_rank=5).toarray().ravel()
+    np.testing.assert_allclose(ranks, [1.0, 2.5, 2.5, 4.0, 0.0])
+
+
+def test_ranks_ties_spanning_max_rank():
+    # 12 genes tied at ranks 2..13 (average 7.5) span max_rank=10: all are kept,
+    # and the top gene is not dropped even though it has the highest index
+    X = np.array([[1.0] * 12 + [0.0] * 5 + [9.0]])
+    ranks = pyucell.get_rankings(X, max_rank=10).toarray().ravel()
+    assert ranks[-1] == 1.0
+    np.testing.assert_allclose(ranks[:12], 7.5)
+    assert (ranks[12:-1] == 0).all()
+
+
+def test_scores_match_dense_reference():
+    # reference: rank all genes (zeros included) and cap at max_rank, as in UCell (R)
+    from scipy.stats import rankdata
+
+    rng = np.random.default_rng(0)
+    X = rng.poisson(0.3, size=(50, 3000)).astype(float)
+    max_rank = 400
+    idx = np.arange(2990, 3000)
+
+    ref_ranks = np.minimum(rankdata(-X, method="average", axis=1), max_rank)
+    s_min = len(idx) * (len(idx) + 1) / 2
+    ref = 1 - (ref_ranks[:, idx].sum(axis=1) - s_min) / (len(idx) * max_rank - s_min)
+
+    ad = sc.AnnData(X=sparse.csr_matrix(X))
+    pyucell.compute_ucell_scores(ad, signatures={"sig": list(ad.var_names[idx])}, max_rank=max_rank, n_jobs=1)
+    np.testing.assert_allclose(ad.obs["sig_UCell"].to_numpy(), ref, atol=1e-6)
 
 
 def test_compute_ucell(adata, signatures):
@@ -104,6 +142,7 @@ def test_knn_basic(adata_with_scores, signatures):
     pyucell.smooth_knn_scores(adata_with_scores, obs_columns=obs_cols, suffix=suffix2)
     signature_columns_exist(adata_with_scores, obs_cols, suffix=suffix2)
 
+
 def test_knn_from_graph(adata_with_scores, signatures):
 
     suffix1 = "_UCell"
@@ -113,6 +152,7 @@ def test_knn_from_graph(adata_with_scores, signatures):
     pyucell.smooth_knn_scores(adata_with_scores, obs_columns=obs_cols, graph_key="customgraph_connectivities")
     signature_columns_exist(adata_with_scores, obs_cols, suffix=suffix2)
 
+
 def test_knn_uponly(adata_with_scores, signatures):
 
     suffix1 = "_UCell"
@@ -121,10 +161,10 @@ def test_knn_uponly(adata_with_scores, signatures):
     pyucell.smooth_knn_scores(adata_with_scores, obs_columns=obs_cols, up_only=True)
     signature_columns_exist(adata_with_scores, obs_cols, suffix=suffix2)
 
+
 def test_knn_invalud(adata_with_scores, signatures):
 
     suffix1 = "_UCell"
-    suffix2 = "_kNN"
     obs_cols = [s + suffix1 for s in signatures.keys()]
 
     with pytest.raises(ValueError, match="decay must be between 0 and 1"):
@@ -134,10 +174,10 @@ def test_knn_invalud(adata_with_scores, signatures):
         pyucell.smooth_knn_scores(adata_with_scores, obs_columns=obs_cols, graph_key="not_a_graph")
 
 
-
 # ---------------------------------------------------------------------------
 # compute_scores_from_ranks
 # ---------------------------------------------------------------------------
+
 
 def test_scores_from_ranks_matches_compute_ucell(adata, signatures):
     ranks = pyucell.get_rankings(adata)
@@ -224,6 +264,7 @@ def test_scores_from_ranks_shape_mismatch(adata, signatures):
 
 try:
     import torch
+
     HAS_TORCH = True
 except ImportError:
     HAS_TORCH = False
