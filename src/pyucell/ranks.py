@@ -7,7 +7,7 @@ from pyucell._torch_utils import import_torch, resolve_device, to_torch_dense
 
 
 def get_rankings(
-    data,
+    data: AnnData | np.ndarray | sparse.spmatrix,
     layer: str = None,
     max_rank: int = 1500,
     ties_method: str = "average",

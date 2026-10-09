@@ -16,8 +16,8 @@ import pyucell as uc
    :nosignatures:
    :toctree: generated
 
-   pyucell.compute_ucell_scores
-   pyucell.get_rankings
-   pyucell.compute_scores_from_ranks
-   pyucell.smooth_knn_scores
+   compute_ucell_scores
+   get_rankings
+   compute_scores_from_ranks
+   smooth_knn_scores
 ```

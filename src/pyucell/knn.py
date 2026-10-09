@@ -1,12 +1,13 @@
 import numpy as np
 import scanpy as sc
+from anndata import AnnData
 from scipy import sparse
 
 from pyucell._torch_utils import import_torch, resolve_device
 
 
 def smooth_knn_scores(
-    adata,
+    adata: AnnData,
     obs_columns,
     k=10,
     use_rep="X_pca",
@@ -74,7 +75,7 @@ def smooth_knn_scores(
         axis=1,
     )
 
-    if device is not None: # pragma: no cover
+    if device is not None:  # pragma: no cover
         torch = import_torch()
         dev = resolve_device(device)
         W_coo = W.tocoo()

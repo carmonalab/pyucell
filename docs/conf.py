@@ -38,6 +38,8 @@ release = info["Version"]
 bibtex_bibfiles = ["references.bib"]
 templates_path = ["_templates"]
 nitpicky = True  # Warn about broken links
+# The README (included in index.md) uses H3 sections directly under the H1 title
+suppress_warnings = ["myst.header"]
 needs_sphinx = "4.0"
 
 html_context = {
@@ -104,12 +106,14 @@ intersphinx_mapping = {
     "anndata": ("https://anndata.scverse.org/en/stable/", None),
     "scanpy": ("https://scanpy.scverse.org/en/stable/", None),
     "numpy": ("https://numpy.org/doc/stable/", None),
+    "scipy": ("https://docs.scipy.org/doc/scipy/", None),
 }
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "**.ipynb_checkpoints"]
+# contributing.md is the scverse template developer guide; it is not part of the published docs
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "**.ipynb_checkpoints", "contributing.md"]
 
 
 # -- Options for HTML output -------------------------------------------------
@@ -137,4 +141,7 @@ nitpick_ignore = [
     # If building the documentation fails because of a missing link that is outside your control,
     # you can add an exception to this list.
     #     ("py:class", "igraph.Graph"),
+    # scipy sparse classes are documented under scipy.sparse, not their private modules
+    ("py:class", "scipy.sparse._csr.csr_matrix"),
+    ("py:class", "scipy.sparse._matrix.spmatrix"),
 ]
